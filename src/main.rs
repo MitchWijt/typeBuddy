@@ -74,10 +74,6 @@ fn loop_type_exercise() {
             Key::Char(key) => {
                 let current_char_to_match = text_to_match_peekable_chars.peek().unwrap();
 
-                // if state.is_current_strike_match {
-                // } else {
-                // }
-
                 if &key == current_char_to_match {
                     text_to_match_peekable_chars.next();
                     color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Green).unwrap();
