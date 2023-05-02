@@ -2,12 +2,12 @@ mod symbols;
 
 use std::collections::HashMap;
 use clap::{Parser, Subcommand};
-use std::io::{stdin, stdout, Write};
-use std::str::Chars;
+use std::io::{stdin, stdout, Stdout, Write};
 use termion::event::Key;
 use termion::input::TermRead;
-use termion::raw::IntoRawMode;
+use termion::raw::{IntoRawMode, RawTerminal};
 use symbols::{UNDERLINE, RESET};
+use crate::symbols::{Color, GREEN, RED};
 
 #[derive(Parser)]
 struct Cli {
@@ -22,6 +22,7 @@ enum Commands {
 
 struct State {
     text_to_match: String,
+    cursor_index: u32,
     is_current_strike_match: bool,
 }
 
@@ -29,26 +30,10 @@ impl State {
     pub fn new() -> Self {
         State {
             text_to_match: String::from("This is the text you must rewrite"),
+            cursor_index: 0,
             is_current_strike_match: true,
         }
     }
-}
-
-/*
-Main thing to fix at the moment is the HashMap that only can have unique values.
-We need duplicate values, and also sort them by Index and able to alter the characters to
-underline and color them accordingly.
-
-Altering characters in the middle of a set is mandatory.
-
-We also need to have keep more state / statistics
- */
-
-//change this name, it's kind of ugly
-#[derive(Debug)]
-struct CharInText {
-    character: String,
-    index: u32,
 }
 
 fn main() {
@@ -74,6 +59,10 @@ fn loop_type_exercise() {
     write!(stdout, "{}", termion::cursor::Hide).unwrap();
     stdout.flush().unwrap();
 
+    //initial char
+    underline_char(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
+    rerender_text_to_match_from_hashmap(&text_to_match_char_hashmap, &mut stdout).unwrap();
+
     for key in stdin().keys() {
         match key.unwrap() {
             Key::Char('q') => break,
@@ -85,59 +74,92 @@ fn loop_type_exercise() {
             Key::Char(key) => {
                 let current_char_to_match = text_to_match_peekable_chars.peek().unwrap();
 
-                // underline the current char to be written on the cursor index and write the string
-                // to stdout.
-
-                // get char from hashmap
-                // clone the value into a new string that is altered
-                // insert the character with the new string and the same index
-                let char_to_alter = text_to_match_char_hashmap.get_mut(current_char_to_match).unwrap();
-                char_to_alter.character = underline_char(current_char_to_match);
-
-                hashmap_to_string(&text_to_match_char_hashmap);
-
-                // text_to_match_char_hashmap.insert(*current_char_to_match, char_to_alter);
-
+                // if state.is_current_strike_match {
+                // } else {
+                // }
 
                 if &key == current_char_to_match {
                     text_to_match_peekable_chars.next();
+                    color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Green).unwrap();
+
+                    state.cursor_index += 1;
                     state.is_current_strike_match = true;
                 } else {
+                    color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Red).unwrap();
                     state.is_current_strike_match = false;
                 }
+
+                remove_underlines(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
+                underline_char(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
+                rerender_text_to_match_from_hashmap(&text_to_match_char_hashmap, &mut stdout).unwrap();
             },
             _ => {}
         };
     }
 }
 
-fn chars_into_hashmap(chars: Vec<char>) -> HashMap<u32, CharInText> {
+fn chars_into_hashmap(chars: Vec<char>) -> HashMap<u32, String> {
     let mut hash_map = HashMap::new();
     let mut index = 0;
 
     for char in chars {
-        let character = CharInText {
-            character: String::from(char),
-            index,
-        };
-        hash_map.insert(index, character);
-
-        // can we do this in another way?
+        hash_map.insert(index, String::from(char));
         index += 1;
     }
 
     return hash_map;
 }
 
-fn underline_char(char: &char) -> String {
-    return String::from(format!("{}{}{}", UNDERLINE, char, RESET));
+fn underline_char(hash_map: &mut HashMap<u32, String>, cursor_index: &u32) -> Result<(), &'static str> {
+    let char_to_alter = hash_map.get(cursor_index).unwrap();
+    let underlined_char = String::from(format!("{}{}{}", UNDERLINE, char_to_alter, RESET));
+    hash_map.insert(*cursor_index, underlined_char);
+
+    Ok(())
 }
 
-fn hashmap_to_string(hash_map: &HashMap<char, CharInText>) -> String {
+fn remove_underlines(hash_map: &mut HashMap<u32, String>, cursor_index: &u32) -> Result<(), &'static str> {
+    for index in 0..*cursor_index {
+        let character = hash_map.get(&index).unwrap();
+        let removed_underline_char = character.replace(UNDERLINE, "");
+        hash_map.insert(index, removed_underline_char);
+    }
+
+    Ok(())
+}
+
+fn color_char(hash_map: &mut HashMap<u32, String>, cursor_index: &u32, color: Color) -> Result<(), &'static str> {
+    let char_to_alter = hash_map.get(cursor_index).unwrap();
+    let colored_char = match color {
+        Color::Green => String::from(format!("{}{}{}", GREEN, char_to_alter, RESET)),
+        Color::Red => String::from(format!("{}{}{}", RED, char_to_alter, RESET)),
+    };
+    hash_map.insert(*cursor_index, colored_char);
+
+    Ok(())
+}
+
+
+
+fn hashmap_to_string(hash_map: &HashMap<u32, String>) -> String {
+    let mut bytes: Vec<u8> = Vec::new();
     let mut sorted: Vec<_> = hash_map.iter().collect();
-    sorted.sort_by(|a, b| a.1.index.cmp(&b.1.index));
+    sorted.sort_by_key(|a| a.0);
 
-    println!("{:?}", sorted);
+    for (_, character) in sorted {
+        for byte in character.as_bytes() {
+            bytes.push(*byte);
+        }
+    }
 
-    return String::from("sdfdsf");
+    return String::from_utf8(bytes).unwrap();
+}
+
+fn rerender_text_to_match_from_hashmap(hash_map: &HashMap<u32, String>, stdout: &mut RawTerminal<Stdout>) -> Result<(), &'static str> {
+    let text_to_match_string = hashmap_to_string(hash_map);
+    write!(stdout, "{}{}", termion::cursor::Goto(1, 1), termion::clear::All).unwrap();
+    write!(stdout, "{}", text_to_match_string).unwrap();
+    stdout.flush().unwrap();
+
+    Ok(())
 }
