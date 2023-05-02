@@ -1,30 +1,22 @@
 mod symbols;
+mod cli;
+mod game;
 
 use std::collections::HashMap;
-use clap::{Parser, Subcommand};
 use std::io::{stdin, stdout, Stdout, Write};
+use std::process::exit;
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
+use termion::screen::AlternateScreen;
 use symbols::{UNDERLINE, RESET};
+use crate::cli::Cli;
 use crate::symbols::{Color, GREEN, RED};
-
-#[derive(Parser)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>
-}
-
-#[derive(Subcommand)]
-enum Commands {
-    Start
-}
 
 struct State {
     text_to_match: String,
     text_length: usize,
     cursor_index: u32,
-    is_current_strike_match: bool,
 }
 
 impl State {
@@ -35,20 +27,18 @@ impl State {
             text_to_match: text ,
             cursor_index: 0,
             text_length: length,
-            is_current_strike_match: true,
         }
     }
 }
 
 fn main() {
-    let cli = Cli::parse();
-
-    match &cli.command {
-        Some(Commands::Start) => {
-            loop_type_exercise();
-        },
-        None => {}
-    }
+    match Cli::start() {
+        Ok(_) => ..,
+        Err(_) => {
+            eprintln!("Unknown command typeBuddy");
+            exit(1);
+        }
+    };
 }
 
 fn loop_type_exercise() {
@@ -76,19 +66,16 @@ fn loop_type_exercise() {
                 }
             }
             Key::Char(key) => {
-                let current_char_to_match = text_to_match_peekable_chars.peek().unwrap();
+                let current_char_to_match = text_to_match_peekable_chars.peek();
 
                 match current_char_to_match {
                     Some(char) => {
                         if &key == char {
                             text_to_match_peekable_chars.next();
                             color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Green).unwrap();
-
                             state.cursor_index += 1;
-                            state.is_current_strike_match = true;
                         } else {
                             color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Red).unwrap();
-                            state.is_current_strike_match = false;
                         }
 
                         if state.cursor_index < (state.text_length) as u32 {
