@@ -22,15 +22,19 @@ enum Commands {
 
 struct State {
     text_to_match: String,
+    text_length: usize,
     cursor_index: u32,
     is_current_strike_match: bool,
 }
 
 impl State {
     pub fn new() -> Self {
+        let text = String::from("This is the text you must rewrite");
+        let length = text.len();
         State {
-            text_to_match: String::from("This is the text you must rewrite"),
+            text_to_match: text ,
             cursor_index: 0,
+            text_length: length,
             is_current_strike_match: true,
         }
     }
@@ -74,20 +78,27 @@ fn loop_type_exercise() {
             Key::Char(key) => {
                 let current_char_to_match = text_to_match_peekable_chars.peek().unwrap();
 
-                if &key == current_char_to_match {
-                    text_to_match_peekable_chars.next();
-                    color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Green).unwrap();
+                match current_char_to_match {
+                    Some(char) => {
+                        if &key == char {
+                            text_to_match_peekable_chars.next();
+                            color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Green).unwrap();
 
-                    state.cursor_index += 1;
-                    state.is_current_strike_match = true;
-                } else {
-                    color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Red).unwrap();
-                    state.is_current_strike_match = false;
+                            state.cursor_index += 1;
+                            state.is_current_strike_match = true;
+                        } else {
+                            color_char(&mut text_to_match_char_hashmap, &state.cursor_index, Color::Red).unwrap();
+                            state.is_current_strike_match = false;
+                        }
+
+                        if state.cursor_index < (state.text_length) as u32 {
+                            remove_underlines(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
+                            underline_char(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
+                            rerender_text_to_match_from_hashmap(&text_to_match_char_hashmap, &mut stdout).unwrap();
+                        }
+                    },
+                    None => {}
                 }
-
-                remove_underlines(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
-                underline_char(&mut text_to_match_char_hashmap, &state.cursor_index).unwrap();
-                rerender_text_to_match_from_hashmap(&text_to_match_char_hashmap, &mut stdout).unwrap();
             },
             _ => {}
         };
