@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::io::{stdin};
+use std::iter::Peekable;
+use std::str::Chars;
 use termion::event::Key;
 use termion::input::TermRead;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
@@ -10,6 +12,7 @@ struct GameState {
     amount_chars_incorrect: u32,
     duration_milliseconds: u32,
     cursor_index: u32,
+    strike_is_correct: bool
 }
 
 impl GameState {
@@ -19,20 +22,9 @@ impl GameState {
             amount_chars_correct: 0,
             duration_milliseconds: 0,
             cursor_index: 0,
+            strike_is_correct: true
         }
     }
-}
-
-fn string_to_hashmap(string: &String) -> HashMap<u32, String> {
-    let mut hash_map = HashMap::new();
-    let mut index = 0;
-
-    for char in string.chars() {
-        hash_map.insert(index, String::from(char));
-        index += 1;
-    }
-
-    return hash_map;
 }
 
 struct GameText {
@@ -43,7 +35,14 @@ struct GameText {
 impl GameText {
     pub fn new() -> Self {
         let text = String::from("This is the text to match");
-        let hash_map = string_to_hashmap(&text);
+
+        let mut hash_map = HashMap::new();
+        let mut index = 0;
+
+        for char in text.chars() {
+            hash_map.insert(index, String::from(char));
+            index += 1;
+        }
 
         GameText {
             raw_text: text,
@@ -65,6 +64,15 @@ impl GameText {
         return String::from_utf8(bytes).unwrap();
     }
 
+    fn reset_hashmap(&mut self) {
+        let mut index = 0;
+
+        for char in self.raw_text.chars() {
+            self.text_hashmap.insert(index, String::from(char));
+            index += 1;
+        }
+    }
+
     pub fn underline_char(&mut self, cursor_index: &u32) -> Result<(), &'static str> {
         let char_to_alter = self.text_hashmap.get(cursor_index).unwrap();
         let underlined_char = String::from(format!("{}{}{}", UNDERLINE, char_to_alter, RESET));
@@ -73,8 +81,8 @@ impl GameText {
         Ok(())
     }
 
-    pub fn remove_underlines(&mut self, cursor_index: &u32) -> Result<(), &'static str> {
-        for index in 0..*cursor_index {
+    pub fn remove_underlines(&mut self) -> Result<(), &'static str> {
+        for index in 0..(self.raw_text.len()) as u32 {
             let character = self.text_hashmap.get(&index).unwrap();
             let removed_underline_char = character.replace(UNDERLINE, "");
             self.text_hashmap.insert(index, removed_underline_char);
@@ -110,15 +118,29 @@ impl Game {
         }
     }
 
-    pub fn start(&mut self) -> Result<(), &'static str> {
+    fn is_end(&self) -> bool {
+        &self.state.cursor_index == &((self.text.raw_text.len()) as u32) && self.state.strike_is_correct ||
+            &self.state.cursor_index == &((self.text.raw_text.len() - 1) as u32) && !self.state.strike_is_correct
+    }
+
+    fn reset(&mut self) {
+        self.state = GameState::new();
+        self.text.reset_hashmap();
+    }
+
+    fn initialize(&mut self) {
         self.terminal.clear_console();
         self.terminal.hide_cursor();
 
         self.text.underline_char(&self.state.cursor_index).unwrap();
         self.terminal.render_text(&self.text.hashmap_to_string());
+    }
 
-        let text = self.text.raw_text.clone();
-        let mut peekable_chars = text.chars().peekable();
+    pub fn start(&mut self) -> Result<(), &'static str> {
+        self.initialize();
+
+        let raw_text = self.text.raw_text.clone();
+        let mut peekable_chars = raw_text.chars().peekable();
 
         for key in stdin().keys() {
             match key.unwrap() {
@@ -126,6 +148,10 @@ impl Game {
                 Key::Ctrl(key) => {
                     if key == 'c' {
                         break;
+                    } else if key == 'r' {
+                        self.reset();
+                        self.initialize();
+                        peekable_chars = raw_text.chars().peekable();
                     }
                 }
                 Key::Char(key) => {
@@ -134,20 +160,30 @@ impl Game {
                     match current_char_to_match {
                         Some(char) => {
                             if &key == char {
-                                peekable_chars.next();
                                 self.text.color_char(&self.state.cursor_index, Color::Green).unwrap();
-                                self.state.cursor_index += 1;
+                                self.state.strike_is_correct = true;
                             } else {
                                 self.text.color_char(&self.state.cursor_index, Color::Red).unwrap();
+                                self.state.strike_is_correct = false;
                             }
 
-                            if  &self.state.cursor_index < &((self.text.raw_text.len()) as u32) {
-                                self.text.remove_underlines(&self.state.cursor_index).unwrap();
+                            if self.state.strike_is_correct {
+                                peekable_chars.next();
+                                self.state.cursor_index += 1;
+                            }
+
+                            if !self.is_end() {
+                                self.text.remove_underlines().unwrap();
                                 self.text.underline_char(&self.state.cursor_index).unwrap();
-
-                                self.terminal.clear_console();
-                                self.terminal.render_text(&self.text.hashmap_to_string());
                             }
+
+                            self.terminal.clear_console();
+                            self.terminal.render_text(&self.text.hashmap_to_string());
+
+                            if self.is_end() {
+                                self.terminal.clear_console();
+                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press Ctrl + r to play again."));
+                            };
                         },
                         None => {}
                     }
