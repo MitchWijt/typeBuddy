@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use crate::game::Game;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -17,9 +18,8 @@ impl Cli {
 
         match &cli.command {
             Some(Commands::Start) => {
-                // initiate GameState and GameText here
-                // call Game::start()
-                loop_type_exercise();
+                let mut game = Game::new();
+                game.start()?;
             },
             None => {}
         }
