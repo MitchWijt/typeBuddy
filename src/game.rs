@@ -2,106 +2,14 @@ use std::collections::HashMap;
 use std::io::{stdin};
 use std::iter::Peekable;
 use std::str::Chars;
+use std::sync::{Arc, mpsc};
 use termion::event::Key;
 use termion::input::TermRead;
+use crate::game_state::GameState;
+use crate::game_text::GameText;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 use crate::terminal::Terminal;
-
-struct GameState {
-    amount_chars_correct: u32,
-    amount_chars_incorrect: u32,
-    duration_milliseconds: u32,
-    cursor_index: u32,
-    strike_is_correct: bool
-}
-
-impl GameState {
-    pub fn new() -> Self {
-        GameState {
-            amount_chars_incorrect: 0,
-            amount_chars_correct: 0,
-            duration_milliseconds: 0,
-            cursor_index: 0,
-            strike_is_correct: true
-        }
-    }
-}
-
-struct GameText {
-    raw_text: String,
-    text_hashmap: HashMap<u32, String>,
-}
-
-impl GameText {
-    pub fn new() -> Self {
-        let text = String::from("This is the text to match");
-
-        let mut hash_map = HashMap::new();
-        let mut index = 0;
-
-        for char in text.chars() {
-            hash_map.insert(index, String::from(char));
-            index += 1;
-        }
-
-        GameText {
-            raw_text: text,
-            text_hashmap: hash_map,
-        }
-    }
-
-    fn hashmap_to_string(&self) -> String {
-        let mut bytes: Vec<u8> = Vec::new();
-        let mut sorted: Vec<_> = self.text_hashmap.iter().collect();
-        sorted.sort_by_key(|a| a.0);
-
-        for (_, character) in sorted {
-            for byte in character.as_bytes() {
-                bytes.push(*byte);
-            }
-        }
-
-        return String::from_utf8(bytes).unwrap();
-    }
-
-    fn reset_hashmap(&mut self) {
-        let mut index = 0;
-
-        for char in self.raw_text.chars() {
-            self.text_hashmap.insert(index, String::from(char));
-            index += 1;
-        }
-    }
-
-    pub fn underline_char(&mut self, cursor_index: &u32) -> Result<(), &'static str> {
-        let char_to_alter = self.text_hashmap.get(cursor_index).unwrap();
-        let underlined_char = String::from(format!("{}{}{}", UNDERLINE, char_to_alter, RESET));
-        self.text_hashmap.insert(*cursor_index, underlined_char);
-
-        Ok(())
-    }
-
-    pub fn remove_underlines(&mut self) -> Result<(), &'static str> {
-        for index in 0..(self.raw_text.len()) as u32 {
-            let character = self.text_hashmap.get(&index).unwrap();
-            let removed_underline_char = character.replace(UNDERLINE, "");
-            self.text_hashmap.insert(index, removed_underline_char);
-        }
-
-        Ok(())
-    }
-
-    pub fn color_char(&mut self, cursor_index: &u32, color: Color) -> Result<(), &'static str> {
-        let char_to_alter = self.text_hashmap.get(cursor_index).unwrap();
-        let colored_char = match color {
-            Color::Green => String::from(format!("{}{}{}", GREEN, char_to_alter, RESET)),
-            Color::Red => String::from(format!("{}{}{}", RED, char_to_alter, RESET)),
-        };
-        self.text_hashmap.insert(*cursor_index, colored_char);
-
-        Ok(())
-    }
-}
+use crate::timer::Timer;
 
 pub struct Game {
     text: GameText,
@@ -142,6 +50,16 @@ impl Game {
         let raw_text = self.text.raw_text.clone();
         let mut peekable_chars = raw_text.chars().peekable();
 
+        // mpsc = multiple producer single consumer. Which is why the tx(sender) can be cloned and the rx(receiver) cannot.
+        // our main thread (game) is a producer of continue_timer(tx_continue_timer) and the timer thread is the single consumer of continue_timer
+        // the timer thread is a producer of timer_duration(tx_timer_duration) hence the clone. and the main thread (game) is the single consumer of timer_duration.
+        let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<i32>();
+        let (tx_continue_timer, rx_continue_timer) = mpsc::channel::<bool>();
+        Timer::start(tx_timer_duration.clone(), rx_continue_timer);
+
+        //TODO: Do not rerender or recapture correct/incorrect keystrokes on subsequent correct or incorrect keystrokes on the same key.
+        // if the previous cursor index is the same as the current cursor_index. We should not do anything and continue;
+
         for key in stdin().keys() {
             match key.unwrap() {
                 Key::Char('q') => break,
@@ -169,7 +87,10 @@ impl Game {
 
                             if self.state.strike_is_correct {
                                 peekable_chars.next();
+                                self.state.amount_chars_correct += 1;
                                 self.state.cursor_index += 1;
+                            } else {
+                                self.state.amount_chars_incorrect += 1;
                             }
 
                             if !self.is_end() {
@@ -181,8 +102,14 @@ impl Game {
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
                             if self.is_end() {
+                                Timer::stop(tx_continue_timer.clone());
+                                self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
+
+                                println!("{:?}", &self.state);
+                                // save state to file in a new thread
+
                                 self.terminal.clear_console();
-                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press Ctrl + r to play again."));
+                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'q' to quit"));
                             };
                         },
                         None => {}
