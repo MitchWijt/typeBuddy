@@ -1,15 +1,12 @@
-use std::collections::HashMap;
 use std::io::{stdin};
-use std::iter::Peekable;
-use std::str::Chars;
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc};
 use termion::event::Key;
 use termion::input::TermRead;
 use crate::game_state::GameState;
 use crate::game_text::GameText;
-use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
+use crate::symbols::{Color};
 use crate::terminal::Terminal;
-use crate::timer::Timer;
+use crate::timer::{Timer, TimerState};
 
 pub struct Game {
     text: GameText,
@@ -54,8 +51,8 @@ impl Game {
         // our main thread (game) is a producer of continue_timer(tx_continue_timer) and the timer thread is the single consumer of continue_timer
         // the timer thread is a producer of timer_duration(tx_timer_duration) hence the clone. and the main thread (game) is the single consumer of timer_duration.
         let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<i32>();
-        let (tx_continue_timer, rx_continue_timer) = mpsc::channel::<bool>();
-        Timer::start(tx_timer_duration.clone(), rx_continue_timer);
+        let (tx_timer_state, rx_timer_state) = mpsc::channel::<TimerState>();
+        Timer::start(tx_timer_duration.clone(), rx_timer_state);
 
         //TODO: Do not rerender or recapture correct/incorrect keystrokes on subsequent correct or incorrect keystrokes on the same key.
         // if the previous cursor index is the same as the current cursor_index. We should not do anything and continue;
@@ -70,6 +67,7 @@ impl Game {
                         self.reset();
                         self.initialize();
                         peekable_chars = raw_text.chars().peekable();
+                        Timer::reset(tx_timer_state.clone());
                     }
                 }
                 Key::Char(key) => {
@@ -102,7 +100,7 @@ impl Game {
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
                             if self.is_end() {
-                                Timer::stop(tx_continue_timer.clone());
+                                Timer::stop(tx_timer_state.clone());
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
 
                                 println!("{:?}", &self.state);

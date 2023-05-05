@@ -1,13 +1,17 @@
-use std::ffi::c_int;
-use std::sync::{Arc, mpsc, Mutex};
-use std::sync::mpsc::{Receiver, Sender, TryRecvError};
+use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::Duration;
+
+#[derive(PartialEq)]
+pub enum TimerState {
+    STOP,
+    RESET
+}
 
 pub struct Timer {}
 
 impl Timer {
-    pub fn start(tx_timer_duration: Sender<i32>, rx_continue_timer: Receiver<bool>) {
+    pub fn start(tx_timer_duration: Sender<i32>, rx_timer_state: Receiver<TimerState>) {
         let mut counter = 0;
 
         thread::spawn(move || {
@@ -15,21 +19,26 @@ impl Timer {
                 thread::sleep(Duration::from_secs(1));
                 counter += 1;
 
-                match rx_continue_timer.try_recv() {
-                    Ok((continue_timer)) => {
-                        if !continue_timer {
+                match rx_timer_state.try_recv() {
+                    Ok(state) => {
+                        if state == TimerState::STOP {
                             tx_timer_duration.send(counter).unwrap();
+                        } else if state == TimerState::RESET {
+                            counter = 0;
                         }
                     },
-                    Err(_) => continue,
-                    _ => continue,
+                    Err(_) => continue
                 }
             }
         });
     }
 
-    pub fn stop(tx_continue_timer: Sender<bool>,) {
-        tx_continue_timer.send(false).unwrap();
+    pub fn stop(tx_timer_state: Sender<TimerState>,) {
+        tx_timer_state.send(TimerState::STOP).unwrap();
+    }
+
+    pub fn reset(tx_timer_state: Sender<TimerState>,) {
+        tx_timer_state.send(TimerState::RESET).unwrap();
     }
 }
 
