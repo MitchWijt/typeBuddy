@@ -45,17 +45,11 @@ impl Game {
         self.initialize();
 
         let raw_text = self.text.raw_text.clone();
-        let mut peekable_chars = raw_text.chars().peekable();
+        let mut chars = raw_text.chars().peekable();
 
-        // mpsc = multiple producer single consumer. Which is why the tx(sender) can be cloned and the rx(receiver) cannot.
-        // our main thread (game) is a producer of continue_timer(tx_continue_timer) and the timer thread is the single consumer of continue_timer
-        // the timer thread is a producer of timer_duration(tx_timer_duration) hence the clone. and the main thread (game) is the single consumer of timer_duration.
         let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<i32>();
         let (tx_timer_state, rx_timer_state) = mpsc::channel::<TimerState>();
         Timer::start(tx_timer_duration.clone(), rx_timer_state);
-
-        //TODO: Do not rerender or recapture correct/incorrect keystrokes on subsequent correct or incorrect keystrokes on the same key.
-        // if the previous cursor index is the same as the current cursor_index. We should not do anything and continue;
 
         for key in stdin().keys() {
             match key.unwrap() {
@@ -66,15 +60,16 @@ impl Game {
                     } else if key == 'r' {
                         self.reset();
                         self.initialize();
-                        peekable_chars = raw_text.chars().peekable();
+                        chars = raw_text.chars().peekable();
                         Timer::reset(tx_timer_state.clone());
                     }
                 }
+                // TODO: split this up into separate functions or modules to make it more clear what this is doing.
                 Key::Char(key) => {
-                    let current_char_to_match = peekable_chars.peek();
-
-                    match current_char_to_match {
+                    match chars.peek() {
                         Some(char) => {
+                            self.state.previous_indexes.insert(self.state.cursor_index);
+
                             if &key == char {
                                 self.text.color_char(&self.state.cursor_index, Color::Green).unwrap();
                                 self.state.strike_is_correct = true;
@@ -84,11 +79,13 @@ impl Game {
                             }
 
                             if self.state.strike_is_correct {
-                                peekable_chars.next();
-                                self.state.amount_chars_correct += 1;
+                                chars.next();
                                 self.state.cursor_index += 1;
                             } else {
-                                self.state.amount_chars_incorrect += 1;
+                                // When duplicate strike: Ideally we do not rerender and do not increment the amount of chars.
+                                if !self.state.is_duplicate_strike() {
+                                    self.state.amount_chars_incorrect += 1;
+                                }
                             }
 
                             if !self.is_end() {
@@ -101,7 +98,9 @@ impl Game {
 
                             if self.is_end() {
                                 Timer::stop(tx_timer_state.clone());
+
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
+                                self.state.amount_chars_correct = &((self.text.raw_text.len()) as u32) - self.state.amount_chars_incorrect;
 
                                 println!("{:?}", &self.state);
                                 // save state to file in a new thread
