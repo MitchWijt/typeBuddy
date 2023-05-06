@@ -41,6 +41,22 @@ impl Game {
         self.terminal.render_text(&self.text.hashmap_to_string());
     }
 
+    fn handle_correct_strike(&mut self) {
+        self.text.color_char(&self.state.cursor_index, Color::Green).unwrap();
+        self.state.strike_is_correct = true;
+
+        self.state.previous_indexes.insert(self.state.cursor_index);
+        self.state.cursor_index += 1;
+    }
+
+    fn handle_incorrect_strike(&mut self) {
+        self.text.color_char(&self.state.cursor_index, Color::Red).unwrap();
+        self.state.strike_is_correct = false;
+
+        self.state.previous_indexes.insert(self.state.cursor_index);
+        self.state.amount_chars_incorrect += 1;
+    }
+
     pub fn start(&mut self) -> Result<(), &'static str> {
         self.initialize();
 
@@ -64,28 +80,17 @@ impl Game {
                         Timer::reset(tx_timer_state.clone());
                     }
                 }
-                // TODO: split this up into separate functions or modules to make it more clear what this is doing.
                 Key::Char(key) => {
                     match chars.peek() {
                         Some(char) => {
-                            self.state.previous_indexes.insert(self.state.cursor_index);
-
                             if &key == char {
-                                self.text.color_char(&self.state.cursor_index, Color::Green).unwrap();
-                                self.state.strike_is_correct = true;
-                            } else {
-                                self.text.color_char(&self.state.cursor_index, Color::Red).unwrap();
-                                self.state.strike_is_correct = false;
-                            }
-
-                            if self.state.strike_is_correct {
+                                self.handle_correct_strike();
                                 chars.next();
-                                self.state.cursor_index += 1;
                             } else {
-                                // When duplicate strike: Ideally we do not rerender and do not increment the amount of chars.
-                                if !self.state.is_duplicate_strike() {
-                                    self.state.amount_chars_incorrect += 1;
+                                if self.state.is_duplicate_strike() {
+                                    continue;
                                 }
+                                self.handle_incorrect_strike();
                             }
 
                             if !self.is_end() {
@@ -102,7 +107,6 @@ impl Game {
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
                                 self.state.amount_chars_correct = &((self.text.raw_text.len()) as u32) - self.state.amount_chars_incorrect;
 
-                                println!("{:?}", &self.state);
                                 // save state to file in a new thread
 
                                 self.terminal.clear_console();

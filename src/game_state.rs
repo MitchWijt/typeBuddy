@@ -25,4 +25,8 @@ impl GameState {
     pub fn is_duplicate_strike(&self) -> bool {
         self.previous_indexes.contains(&self.cursor_index)
     }
+
+    pub fn save() {
+
+    }
 }
