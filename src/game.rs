@@ -4,6 +4,7 @@ use termion::event::Key;
 use termion::input::TermRead;
 use crate::game_state::GameState;
 use crate::game_text::GameText;
+use crate::statistics::Statistics;
 use crate::symbols::{Color};
 use crate::terminal::Terminal;
 use crate::timer::{Timer, TimerState};
@@ -54,7 +55,7 @@ impl Game {
         self.state.strike_is_correct = false;
 
         self.state.previous_indexes.insert(self.state.cursor_index);
-        self.state.amount_chars_incorrect += 1;
+        self.state.amount_chars_incorrect += 1.0;
     }
 
     pub fn start(&mut self) -> Result<(), &'static str> {
@@ -63,15 +64,19 @@ impl Game {
         let raw_text = self.text.raw_text.clone();
         let mut chars = raw_text.chars().peekable();
 
-        let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<i32>();
+        let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<f32>();
         let (tx_timer_state, rx_timer_state) = mpsc::channel::<TimerState>();
         Timer::start(tx_timer_duration.clone(), rx_timer_state);
 
         for key in stdin().keys() {
             match key.unwrap() {
-                Key::Char('q') => break,
+                Key::Char('q') => {
+                    self.terminal.clear_console();
+                    break;
+                },
                 Key::Ctrl(key) => {
                     if key == 'c' {
+                        self.terminal.clear_console();
                         break;
                     } else if key == 'r' {
                         self.reset();
@@ -105,12 +110,13 @@ impl Game {
                                 Timer::stop(tx_timer_state.clone());
 
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
-                                self.state.amount_chars_correct = &((self.text.raw_text.len()) as u32) - self.state.amount_chars_incorrect;
+                                self.state.amount_chars_correct = &((self.text.raw_text.len()) as f32) - self.state.amount_chars_incorrect;
 
-                                // save state to file in a new thread
+                                let stats = Statistics::from_state(&self.state);
 
                                 self.terminal.clear_console();
                                 self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'q' to quit"));
+                                stats.print(&mut self.terminal);
                             };
                         },
                         None => {}

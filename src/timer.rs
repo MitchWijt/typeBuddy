@@ -11,20 +11,20 @@ pub enum TimerState {
 pub struct Timer {}
 
 impl Timer {
-    pub fn start(tx_timer_duration: Sender<i32>, rx_timer_state: Receiver<TimerState>) {
-        let mut counter = 0;
+    pub fn start(tx_timer_duration: Sender<f32>, rx_timer_state: Receiver<TimerState>) {
+        let mut counter: f32 = 0.0;
 
         thread::spawn(move || {
             loop {
                 thread::sleep(Duration::from_secs(1));
-                counter += 1;
+                counter += 1.0;
 
                 match rx_timer_state.try_recv() {
                     Ok(state) => {
                         if state == TimerState::STOP {
                             tx_timer_duration.send(counter).unwrap();
                         } else if state == TimerState::RESET {
-                            counter = 0;
+                            counter = 0.0;
                         }
                     },
                     Err(_) => continue

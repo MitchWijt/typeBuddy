@@ -17,6 +17,11 @@ impl Terminal {
         self.stdout.flush().unwrap();
     }
 
+    pub fn reset_cursor(&mut self, cursor_row: u16) {
+        write!(self.stdout, "{}",termion::cursor::Goto(1, cursor_row)).unwrap();
+        self.stdout.flush().unwrap();
+    }
+
     pub fn render_text(&mut self, text: &String) {
         write!(self.stdout, "{}", text).unwrap();
         self.stdout.flush().unwrap();
