@@ -112,11 +112,13 @@ impl Game {
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
                                 self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
 
-                                let stats = Statistics::from_state(&self.state);
 
                                 self.terminal.clear_console();
                                 self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'q' to quit"));
+
+                                let stats = Statistics::from_state(&self.state);
                                 stats.print(&mut self.terminal);
+                                stats.save();
                             };
                         },
                         None => {}

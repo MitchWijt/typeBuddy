@@ -7,7 +7,7 @@ pub struct GameState {
     pub duration_in_seconds: f32,
     pub cursor_index: u32,
     pub previous_indexes: HashSet<u32>,
-    pub strike_is_correct: bool
+    pub strike_is_correct: bool,
 }
 
 impl GameState {
