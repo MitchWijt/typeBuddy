@@ -1,11 +1,9 @@
 use std::{env, thread};
-use std::fs::{File, OpenOptions};
+use std::fs::{OpenOptions};
 use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
-use std::path::Path;
-use std::time::Duration;
 use crate::game_state::GameState;
 use crate::terminal::Terminal;
-use serde_json::{json, to_writer, to_vec, from_reader};
+use serde_json::{to_writer, from_reader};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -39,11 +37,12 @@ impl Statistics {
         terminal.render_text(&format!("{0: <10} | {1: <10} | {2: <10}",
                                            self.wpm, self.accuracy, self.duration));
     }
+
     pub fn save(self) {
         let stats_dir_path = env::var("TB_STATS_DIR");
 
         match stats_dir_path {
-            Ok((dir_path)) => {
+            Ok(dir_path) => {
                 let path = format!("{}/type_buddy_stats.json", dir_path);
 
                 let handle = thread::spawn(move || {
@@ -55,7 +54,7 @@ impl Statistics {
                         .unwrap();
 
                     let reader = BufReader::new(&file);
-                    let mut stats = match from_reader(reader) {
+                    let mut stats: Vec<Statistics> = match from_reader(reader) {
                         Ok(v) => v,
                         Err(_) => Vec::new()
                     };
