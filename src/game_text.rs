@@ -3,6 +3,7 @@ use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 
 pub struct GameText {
     pub raw_text: String,
+    pub length: u32,
     pub text_hashmap: HashMap<u32, String>,
 }
 
@@ -19,6 +20,7 @@ impl GameText {
         }
 
         GameText {
+            length: text.len() as u32,
             raw_text: text,
             text_hashmap: hash_map,
         }

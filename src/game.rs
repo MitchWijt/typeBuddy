@@ -25,8 +25,8 @@ impl Game {
     }
 
     fn is_end(&self) -> bool {
-        &self.state.cursor_index == &((self.text.raw_text.len()) as u32) && self.state.strike_is_correct ||
-            &self.state.cursor_index == &((self.text.raw_text.len() - 1) as u32) && !self.state.strike_is_correct
+        self.state.cursor_index == self.text.length && self.state.strike_is_correct ||
+            self.state.cursor_index == (self.text.length - 1) && !self.state.strike_is_correct
     }
 
     fn reset(&mut self) {
@@ -110,7 +110,7 @@ impl Game {
                                 Timer::stop(tx_timer_state.clone());
 
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
-                                self.state.amount_chars_correct = &((self.text.raw_text.len()) as f32) - self.state.amount_chars_incorrect;
+                                self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
 
                                 let stats = Statistics::from_state(&self.state);
 
