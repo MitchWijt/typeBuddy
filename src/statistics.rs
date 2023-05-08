@@ -30,10 +30,10 @@ impl Statistics {
     }
 
     pub fn print(&self, terminal: &mut Terminal) {
-        terminal.reset_cursor(3);
+        terminal.set_cursor_row(3);
         terminal.render_text(&format!("{0: <10} | {1: <10} | {2: <10}",
                                            "WPM", "Accuracy", "Duration in s"));
-        terminal.reset_cursor(4);
+        terminal.set_cursor_row(4);
         terminal.render_text(&format!("{0: <10} | {1: <10} | {2: <10}",
                                            self.wpm, self.accuracy, self.duration));
     }

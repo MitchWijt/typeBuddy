@@ -51,6 +51,7 @@ impl Game {
     }
 
     fn handle_incorrect_strike(&mut self) {
+        self.state.register_incorrect_char(&self.text.text_hashmap);
         self.text.color_char(&self.state.cursor_index, Color::Red).unwrap();
         self.state.strike_is_correct = false;
 
@@ -112,13 +113,14 @@ impl Game {
                                 self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
                                 self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
 
-
                                 self.terminal.clear_console();
                                 self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'q' to quit"));
 
                                 let stats = Statistics::from_state(&self.state);
                                 stats.print(&mut self.terminal);
                                 stats.save();
+
+                                self.state.print_heatmap(&mut self.terminal);
                             };
                         },
                         None => {}

@@ -1,4 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use crate::symbols::{UNDERLINE, RESET};
+use crate::terminal::Terminal;
 
 #[derive(Debug)]
 pub struct GameState {
@@ -7,6 +9,7 @@ pub struct GameState {
     pub duration_in_seconds: f32,
     pub cursor_index: u32,
     pub previous_indexes: HashSet<u32>,
+    pub heatmap_incorrect_chars: HashMap<String, u32>,
     pub strike_is_correct: bool,
 }
 
@@ -18,11 +21,37 @@ impl GameState {
             duration_in_seconds: 0.0,
             cursor_index: 0,
             previous_indexes: HashSet::new(),
+            heatmap_incorrect_chars: HashMap::new(),
             strike_is_correct: true
         }
     }
 
+    pub fn register_incorrect_char(&mut self, text_hashmap: &HashMap<u32, String>) {
+        let char = text_hashmap.get(&self.cursor_index).unwrap();
+
+        let no_underline = char.replace(UNDERLINE, "");
+        let no_reset = no_underline.replace(RESET, "");
+
+        self.heatmap_incorrect_chars
+            .entry(no_reset)
+            .and_modify(|e| {*e += 1})
+            .or_insert(1);
+    }
+
     pub fn is_duplicate_strike(&self) -> bool {
         self.previous_indexes.contains(&self.cursor_index)
+    }
+
+    pub fn print_heatmap(&self, terminal: &mut Terminal) {
+        terminal.set_cursor_row(6);
+        terminal.render_text(&String::from("Error breakdown:"));
+        terminal.set_cursor_row(7);
+        for (char, amount_incorrect) in &self.heatmap_incorrect_chars {
+            if char == " " {
+                terminal.render_text(&String::from(format!("' ':{}\t", amount_incorrect)));
+            } else {
+                terminal.render_text(&String::from(format!("{}:{}\t", char, amount_incorrect)));
+            }
+        }
     }
 }
