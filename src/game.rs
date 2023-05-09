@@ -71,10 +71,6 @@ impl Game {
 
         for key in stdin().keys() {
             match key.unwrap() {
-                Key::Char('q') => {
-                    self.terminal.clear_console();
-                    break;
-                },
                 Key::Ctrl(key) => {
                     if key == 'c' {
                         self.terminal.clear_console();
@@ -104,7 +100,7 @@ impl Game {
                                 self.text.underline_char(&self.state.cursor_index).unwrap();
                             }
 
-                            self.terminal.clear_console();
+                            self.terminal.clear_before_cursor();
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
                             if self.is_end() {
@@ -114,7 +110,7 @@ impl Game {
                                 self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
 
                                 self.terminal.clear_console();
-                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'q' to quit"));
+                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'Ctr + c' to quit"));
 
                                 let stats = Statistics::from_state(&self.state);
                                 stats.print(&mut self.terminal);

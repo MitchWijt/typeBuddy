@@ -1,4 +1,9 @@
 use std::collections::HashMap;
+use std::fs;
+use std::fs::{read, read_to_string};
+use std::io::BufReader;
+use std::net::Shutdown::Read;
+use rand::Rng;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 
 pub struct GameText {
@@ -9,7 +14,8 @@ pub struct GameText {
 
 impl GameText {
     pub fn new() -> Self {
-        let text = String::from("This is the text to match");
+        let paragraph = Paragraph::new();
+        let text = paragraph.random();
 
         let mut hash_map = HashMap::new();
         let mut index = 0;
@@ -76,5 +82,34 @@ impl GameText {
         self.text_hashmap.insert(*cursor_index, colored_char);
 
         Ok(())
+    }
+}
+
+struct Paragraph {
+    excerpts: Vec<String>
+}
+
+impl Paragraph {
+    pub fn new() -> Self {
+        let mut excerpts = Vec::new();
+
+        let files = fs::read_dir("./assets/excerpts").unwrap();
+        for dir_entry in files {
+            let file_path = dir_entry.unwrap().path();
+
+            let excerpt = read_to_string(file_path).unwrap();
+            excerpts.push(excerpt);
+        };
+
+        Paragraph {
+            excerpts
+        }
+    }
+
+    pub fn random(&self) -> String {
+        let mut rng = rand::thread_rng();
+        let random_index = rng.gen_range(0..self.excerpts.len());
+
+        self.excerpts.get(random_index).unwrap().clone()
     }
 }

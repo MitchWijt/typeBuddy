@@ -1,15 +1,25 @@
 use std::io::{Stdout, stdout, Write};
 use termion::raw::{IntoRawMode, RawTerminal};
+use termion::screen::{AlternateScreen, IntoAlternateScreen};
 
 pub struct Terminal {
-    stdout: RawTerminal<Stdout>
+    stdout: AlternateScreen<RawTerminal<Stdout>>
 }
 
 impl Terminal {
     pub fn new() -> Self {
         Terminal {
-            stdout: stdout().into_raw_mode().unwrap()
+            stdout: stdout()
+                .into_raw_mode()
+                .unwrap()
+                .into_alternate_screen()
+                .unwrap()
         }
+    }
+
+    pub fn clear_before_cursor(&mut self) {
+        write!(self.stdout, "{}{}", termion::cursor::Goto(1, 1), termion::clear::BeforeCursor).unwrap();
+        self.stdout.flush().unwrap();
     }
 
     pub fn clear_console(&mut self) {
