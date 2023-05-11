@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use crate::game::Game;
+use crate::plotter::plot;
 
 #[derive(Parser)]
 pub struct Cli {
@@ -9,7 +10,8 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Start
+    Start,
+    Plot
 }
 
 impl Cli {
@@ -21,6 +23,9 @@ impl Cli {
                 let mut game = Game::new();
                 game.start()?;
             },
+            Some(Commands::Plot) => {
+                plot();
+            }
             None => {}
         }
 
