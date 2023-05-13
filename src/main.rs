@@ -16,8 +16,8 @@ use crate::cli::Cli;
 fn main() {
     match Cli::start() {
         Ok(_) => ..,
-        Err(_) => {
-            eprintln!("Unknown command typeBuddy");
+        Err(err) => {
+            eprintln!("Error: {}", err);
             exit(1);
         }
     };

@@ -37,9 +37,17 @@ impl Terminal {
         self.stdout.flush().unwrap();
     }
 
-    pub fn set_cursor_row(&mut self, cursor_row: u16) {
-        self.cursor_row = cursor_row;
+    pub fn cursor_row_down(&mut self, cursor_row: u16) {
+        write!(self.stdout, "{}",termion::cursor::Down(cursor_row)).unwrap();
+        self.stdout.flush().unwrap();
+    }
 
+    pub fn cursor_row_up(&mut self, cursor_row: u16) {
+        write!(self.stdout, "{}",termion::cursor::Up(cursor_row)).unwrap();
+        self.stdout.flush().unwrap();
+    }
+
+    pub fn set_cursor_row(&mut self, cursor_row: u16) {
         write!(self.stdout, "{}",termion::cursor::Goto(self.cursor_col, cursor_row)).unwrap();
         self.stdout.flush().unwrap();
     }
@@ -66,10 +74,6 @@ impl Terminal {
 
     pub fn hide_cursor(&mut self) {
         write!(self.stdout, "{}", termion::cursor::Hide).unwrap();
-        self.stdout.flush().unwrap();
-    }
-
-    pub fn flush(&mut self) {
         self.stdout.flush().unwrap();
     }
 }

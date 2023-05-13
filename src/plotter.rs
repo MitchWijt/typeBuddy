@@ -1,127 +1,144 @@
 use std::cmp::max;
 use std::io::stdin;
-use std::iter::Rev;
-use std::ops::Range;
 use termion::event::Key;
 use crate::terminal::Terminal;
 use termion::input::TermRead;
 
-// - Create struct of plot that keeps his own state, such as the y_values, x_values and data vector
-// - It should also contain the terminal in the struct
-// - Refactor the terminal struct to that we can increase and decrease the cursor row and col from the struct itself
-// - plot_y and plot_x will be internal functions
-// - main public functions can be plot_wpm and plot_accuracy and plot_all
-// - correctly make max_ticks dynamic based on the range given
-// - make it readable and maintainable
+#[derive(Debug)]
+pub struct PlotData {
+    pub data: Vec<(u32, String)>,
+    pub y_values: Vec<u32>,
+}
 
-pub fn plot() {
-    let mut terminal = Terminal::new();
-    terminal.clear_before_cursor();
+pub struct Plotter {
+    terminal: Terminal,
+    data: Vec<(u32, String)>,
+    y_values: Vec<u32>,
+    dimension_x: i32,
+    dimension_y: i32,
+}
 
-    let data: Vec<u32> = vec![10, 40, 20, 34, 56, 20, 25, 60, 50, 44];
+impl Plotter {
+    pub fn new(plot_data: PlotData, dimension: (i32, i32)) -> Self {
+        let terminal = Terminal::new();
+        let dimension_x = dimension.0;
+        let dimension_y = dimension.1;
 
-    let values_y: Vec<u32> = vec![80, 60, 40, 20, 0];
-    let values_x: Vec<&str> = vec!["05-11", "05-10", "05-09", "05-08", "05-07", "05-06", "05-05", "05-04", "05-03", "05-02"];
+        Plotter {
+            terminal,
+            data: plot_data.data,
+            y_values: plot_data.y_values,
+            dimension_x,
+            dimension_y,
+        }
+    }
 
-    plot_y(&mut terminal, &values_y);
-    plot_x(&mut terminal, &values_x, &data);
+    pub fn plot(&mut self) -> Result<(), &'static str> {
+        self.plot_y()?;
+        self.plot_x()?;
 
-    for key in stdin().keys() {
-        match key.unwrap() {
-            Key::Char('q') => {
-                break;
-            }
-            Key::Ctrl(key) => {
-                if key == 'c' {
+        for key in stdin().keys() {
+            match key.unwrap() {
+                Key::Char('q') => {
                     break;
                 }
-            },
-            _ => {}
-        }
-    }
-}
-
-// make sure terminal struct keeps state of current cursor_col and cursor_row. So that we can
-// fetch is with a method. terminal.cursor_row; terminal.cursor_col;
-// terminal can take care of this with it's own internal methods instead of keeping cursor state here.
-// e.g: cursor_advance etc..
-
-pub fn plot_y(terminal: &mut Terminal, values_y: &Vec<u32>) {
-    let mut index = 0;
-    let mut cursor_col: u16 = 1;
-    let mut cursor_row: u16 = 1;
-    let max_ticks = 25;
-
-    for current_tick in 0..max_ticks {
-        if current_tick % (max_ticks / 4) == 0 {
-            let y_value = values_y.get(index).expect("Could not find value");
-            cursor_col = 1;
-            terminal.set_cursor(cursor_col, cursor_row);
-
-            terminal.render_text(&y_value.to_string());
-            if *y_value < 10 {
-                terminal.render_text(&String::from("  |"));
-            } else {
-                terminal.render_text(&String::from(" |"));
+                Key::Ctrl(key) => {
+                    if key == 'c' {
+                        break;
+                    }
+                },
+                _ => {}
             }
+        };
 
-            cursor_row += 1;
-            cursor_col += 2;
-            terminal.set_cursor(cursor_col, cursor_row);
-
-            index += 1;
-        } else {
-            terminal.render_text(&String::from(" |"));
-            cursor_row += 1;
-            terminal.set_cursor(cursor_col, cursor_row);
-        }
-    }
-}
-
-pub fn plot_x(terminal: &mut Terminal, values_x: &Vec<&str>, data: &Vec<u32>) {
-    let mut index = 0;
-    let max_ticks = 100;
-    let mut cursor_col = terminal.cursor_col;
-    let mut cursor_row = terminal.cursor_row;
-
-    // print tricks
-    cursor_col += 2;
-    terminal.set_cursor_col(cursor_col);
-
-    for _ in 0..max_ticks {
-        terminal.render_text(&String::from('-'))
+        Ok(())
     }
 
-    // move one row below the ticks
-    cursor_row += 1;
-    terminal.set_cursor_row(cursor_row);
+    fn plot_y(&mut self) -> Result<(), &'static str> {
+        let mut cursor_col: u16 = 1;
+        let mut cursor_row: u16 = 1;
+        let mut ticks = 0;
 
-    // print the x_values under the ticks
-    for tick in 0..max_ticks {
-        if tick % (max_ticks / 9) == 0 {
-            let x_value = *values_x.get(index).unwrap();
-            terminal.render_text(&String::from(x_value));
+        let max_ticks = self.dimension_y;
+        let ticks_per_value = max_ticks / ((self.y_values.len() - 1) as i32);
 
-            let previous_row = cursor_row.clone();
+        for y_value in &self.y_values {
+            cursor_col = 1;
+            self.terminal.set_cursor(cursor_col, cursor_row);
+            self.terminal.render_text(&y_value.to_string());
 
-            let data_value: f64 = *data.get(index).unwrap() as f64;
+            for _ in 0..ticks_per_value {
+                if *y_value > 99 {
+                    self.terminal.render_text(&String::from("|"));
+                    cursor_col = 4;
+                } else if *y_value >= 10 {
+                    self.terminal.render_text(&String::from(" |"));
+                    cursor_col = 3;
+                } else {
+                    self.terminal.render_text(&String::from("  |"));
+                    cursor_col = 2;
+                }
 
-            let rows = 25.0; //max ticks of the Y axis
-            let max_y_value = 90.0;
-            let value_per_row = max_y_value / rows;
-            let row = rows - (data_value / value_per_row);
+                cursor_row += 1;
+                self.terminal.set_cursor(cursor_col, cursor_row);
 
-
-            terminal.set_cursor_row(row as u16);
-            terminal.render_text(&String::from('◯'));
-            terminal.render_text(&data_value.to_string());
-
-            terminal.set_cursor_row(previous_row);
-
-            index += 1;
-        } else {
-            cursor_col += 1;
-            terminal.set_cursor_col(cursor_col);
+                if ticks >= max_ticks {
+                    break;
+                }
+                ticks += 1;
+            }
         }
+
+        Ok(())
+    }
+
+    fn plot_x(&mut self) -> Result<(), &'static str> {
+        let mut index = 0;
+        let mut cursor_col = self.terminal.cursor_col;
+        let mut cursor_row = self.terminal.cursor_row;
+
+        // print tricks
+        cursor_col += 4;
+        self.terminal.set_cursor(cursor_col, cursor_row);
+
+        for _ in 0..self.dimension_x {
+            self.terminal.render_text(&String::from('-'))
+        }
+
+        // move one row below the ticks
+        cursor_row += 1;
+        self.terminal.set_cursor_row(cursor_row);
+
+        // print the x_values under the ticks
+        for tick in 0..self.dimension_x {
+            let amount_data_values = match self.data.len() - 1 {
+                0 => 1,
+                _ => self.data.len() - 1
+            } as i32;
+            if tick % (self.dimension_x / amount_data_values) == 0 {
+                let (data_value, x_value) = self.data.get(index).unwrap();
+
+                self.terminal.render_text(x_value);
+                let previous_row = cursor_row.clone();
+
+                let rows: f64 = self.dimension_y as f64;
+                let max_y_value: f64 = *self.y_values.get(0).unwrap() as f64;
+                let value_per_row: f64 = max_y_value / rows;
+                let row = rows - (*data_value as f64 / value_per_row);
+
+                self.terminal.set_cursor_row((row + 1.0) as u16);
+                self.terminal.render_text(&String::from('◯'));
+                self.terminal.render_text(&data_value.to_string());
+
+                self.terminal.set_cursor_row(previous_row);
+
+                index += 1;
+            } else {
+                cursor_col += 1;
+                self.terminal.set_cursor_col(cursor_col);
+            }
+        };
+
+        Ok(())
     }
 }
