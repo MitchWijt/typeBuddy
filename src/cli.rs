@@ -14,11 +14,11 @@ pub struct Cli {
 enum Commands {
     Start,
     Plot {
-        #[clap(long)]
-        wpm: Option<bool>,
+        #[clap(long, default_value_t = false)]
+        wpm: bool,
 
-        #[clap(long)]
-        accuracy: Option<bool>,
+        #[clap(long, default_value_t = false)]
+        accuracy: bool,
     }
 }
 
@@ -37,15 +37,8 @@ impl Cli {
                     Err(..) => return Err("Cannot plot stats, No ENV variable defined to stats path")
                 };
 
-                let wpm = match wpm {
-                    Some(v) => *v,
-                    None => false,
-                };
-
-                let accuracy = match accuracy {
-                    Some(v) => *v,
-                    None => false,
-                };
+                let wpm = *wpm;
+                let accuracy = *accuracy;
 
                 if !wpm & !accuracy {
                     return Err("Please choose to either plot WPM or Accuracy");
@@ -63,7 +56,7 @@ impl Cli {
                 if plot_data.data.len() < 1 {
                     return Err("No data to plot")
                 }
-                let mut plotter = Plotter::new(plot_data, (100, 25));
+                let mut plotter = Plotter::new(plot_data, (70, 15));
 
                 plotter.plot()?;
             }

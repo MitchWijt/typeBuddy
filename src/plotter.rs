@@ -57,9 +57,9 @@ impl Plotter {
     fn plot_y(&mut self) -> Result<(), &'static str> {
         let mut cursor_col: u16 = 1;
         let mut cursor_row: u16 = 1;
-        let mut ticks = 0;
 
-        let max_ticks = self.dimension_y;
+        let mut ticks = 0;
+        let max_ticks= self.dimension_y;
         let ticks_per_value = max_ticks / ((self.y_values.len() - 1) as i32);
 
         for y_value in &self.y_values {
@@ -85,6 +85,7 @@ impl Plotter {
                 if ticks >= max_ticks {
                     break;
                 }
+
                 ticks += 1;
             }
         }
@@ -93,51 +94,45 @@ impl Plotter {
     }
 
     fn plot_x(&mut self) -> Result<(), &'static str> {
-        let mut index = 0;
         let mut cursor_col = self.terminal.cursor_col;
         let mut cursor_row = self.terminal.cursor_row;
 
-        // print tricks
+        let bottom_cursor_row = cursor_row + 1;
+        let mut ticks = 0;
+        let max_ticks = self.dimension_x;
+        let ticks_per_value = max_ticks / ((self.data.len() - 1) as i32);
+
+        // we set the cursor col + 4 so it lines up with the Y axis.
         cursor_col += 4;
         self.terminal.set_cursor(cursor_col, cursor_row);
 
-        for _ in 0..self.dimension_x {
-            self.terminal.render_text(&String::from('-'))
-        }
+        for (data_value, x_value) in &self.data {
+            self.terminal.set_cursor_row(bottom_cursor_row);
+            self.terminal.render_text(x_value);
 
-        // move one row below the ticks
-        cursor_row += 1;
-        self.terminal.set_cursor_row(cursor_row);
+            let rows: f64 = self.dimension_y as f64;
+            let max_y_value: f64 = *self.y_values.get(0).unwrap() as f64;
+            let value_per_row: f64 = max_y_value / rows;
+            let row: u16 = (rows - (*data_value as f64 / value_per_row)) as u16;
 
-        // print the x_values under the ticks
-        for tick in 0..self.dimension_x {
-            let amount_data_values = match self.data.len() - 1 {
-                0 => 1,
-                _ => self.data.len() - 1
-            } as i32;
-            if tick % (self.dimension_x / amount_data_values) == 0 {
-                let (data_value, x_value) = self.data.get(index).unwrap();
+            self.terminal.set_cursor_row(row + 1);
+            self.terminal.render_text(&String::from('◯'));
+            self.terminal.render_text(&data_value.to_string());
 
-                self.terminal.render_text(x_value);
-                let previous_row = cursor_row.clone();
+            self.terminal.set_cursor_row(bottom_cursor_row - 1);
+            for _ in 0..ticks_per_value {
+                self.terminal.render_text(&String::from('-'));
 
-                let rows: f64 = self.dimension_y as f64;
-                let max_y_value: f64 = *self.y_values.get(0).unwrap() as f64;
-                let value_per_row: f64 = max_y_value / rows;
-                let row = rows - (*data_value as f64 / value_per_row);
-
-                self.terminal.set_cursor_row((row + 1.0) as u16);
-                self.terminal.render_text(&String::from('◯'));
-                self.terminal.render_text(&data_value.to_string());
-
-                self.terminal.set_cursor_row(previous_row);
-
-                index += 1;
-            } else {
                 cursor_col += 1;
                 self.terminal.set_cursor_col(cursor_col);
+
+                if ticks >= max_ticks {
+                    break;
+                }
+
+                ticks += 1;
             }
-        };
+        }
 
         Ok(())
     }

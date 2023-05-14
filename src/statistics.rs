@@ -1,7 +1,7 @@
 use std::{env, thread};
 use std::fs::{OpenOptions};
 use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
-use chrono::{Datelike, Local, TimeZone};
+use chrono::{Datelike, Local, Timelike, TimeZone};
 use crate::game_state::GameState;
 use crate::terminal::Terminal;
 use serde_json::{to_writer, from_reader};
@@ -127,14 +127,11 @@ impl Statistics {
             };
 
             let date = Local.timestamp_opt(statistic.timestamp, 0).unwrap();
-            let date_string = format!("{}-{}-{}", date.year(), date.month(), date.day());
+            let date_string = format!("{}-{} {}:{}", date.month(), date.day(), date.time().hour(), date.time().minute());
             data.push((data_value, date_string));
         };
 
-        let y_values = match data_type {
-            StatisticDataType::WPM => vec![80, 60, 40, 20, 0],
-            StatisticDataType::ACCURACY => vec![100, 80, 60, 40, 20, 0],
-        };
+        let y_values = vec![100, 80, 60, 40, 20, 0];
 
         PlotData {
             data,
