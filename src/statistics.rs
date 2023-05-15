@@ -48,6 +48,7 @@ impl Statistics {
                                            self.wpm, self.accuracy, self.duration));
     }
 
+    //make sure to save the most recent ones first. FIFO
     pub fn save(self) {
         let stats_dir_path = env::var("TB_STATS_DIR");
 
