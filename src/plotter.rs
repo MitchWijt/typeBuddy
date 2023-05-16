@@ -1,4 +1,3 @@
-use std::cmp::max;
 use std::io::stdin;
 use termion::event::Key;
 use crate::terminal::Terminal;
@@ -95,7 +94,7 @@ impl Plotter {
 
     fn plot_x(&mut self) -> Result<(), &'static str> {
         let mut cursor_col = self.terminal.cursor_col;
-        let mut cursor_row = self.terminal.cursor_row;
+        let cursor_row = self.terminal.cursor_row;
 
         let bottom_cursor_row = cursor_row + 1;
         let mut ticks = 0;

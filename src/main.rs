@@ -10,12 +10,7 @@ mod timer;
 mod statistics;
 mod plotter;
 
-use std::borrow::{Borrow, BorrowMut};
-use std::cell::{Cell, Ref, RefCell, RefMut};
-use std::collections::HashMap;
 use std::process::exit;
-use std::rc::Rc;
-use rand::distributions::uniform::SampleBorrow;
 use crate::cli::Cli;
 
 fn main() {

@@ -1,6 +1,4 @@
-use std::borrow::BorrowMut;
 use std::sync::{Arc, Mutex};
-use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::Duration;
 
