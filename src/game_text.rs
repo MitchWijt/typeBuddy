@@ -14,18 +14,19 @@ impl GameText {
     pub fn new() -> Self {
         let paragraph = Paragraph::new();
         let text = paragraph.random();
+        let text2 = String::from("Hello");
 
         let mut hash_map = HashMap::new();
         let mut index = 0;
 
-        for char in text.chars() {
+        for char in text2.chars() {
             hash_map.insert(index, String::from(char));
             index += 1;
         }
 
         GameText {
-            length: text.len() as u32,
-            raw_text: text,
+            length: text2.len() as u32,
+            raw_text: text2,
             text_hashmap: hash_map,
         }
     }

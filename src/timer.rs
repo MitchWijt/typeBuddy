@@ -1,44 +1,33 @@
+use std::borrow::BorrowMut;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 use std::time::Duration;
 
-#[derive(PartialEq)]
-pub enum TimerState {
-    STOP,
-    RESET
+pub struct Timer {
+    pub duration: Arc<Mutex<f32>>
 }
 
-pub struct Timer {}
-
 impl Timer {
-    pub fn start(tx_timer_duration: Sender<f32>, rx_timer_state: Receiver<TimerState>) {
-        let mut counter: f32 = 0.0;
+    pub fn new() -> Self {
+        Timer {
+            duration: Arc::new(Mutex::new(0.0))
+        }
+    }
+
+    pub fn start(&self) {
+        let duration = self.duration.clone();
 
         thread::spawn(move || {
             loop {
                 thread::sleep(Duration::from_secs(1));
-                counter += 1.0;
-
-                match rx_timer_state.try_recv() {
-                    Ok(state) => {
-                        if state == TimerState::STOP {
-                            tx_timer_duration.send(counter).unwrap();
-                        } else if state == TimerState::RESET {
-                            counter = 0.0;
-                        }
-                    },
-                    Err(_) => continue
-                }
+                *duration.lock().unwrap() += 1.0;
             }
         });
     }
 
-    pub fn stop(tx_timer_state: Sender<TimerState>,) {
-        tx_timer_state.send(TimerState::STOP).unwrap();
-    }
-
-    pub fn reset(tx_timer_state: Sender<TimerState>,) {
-        tx_timer_state.send(TimerState::RESET).unwrap();
+    pub fn reset(&self) {
+        *self.duration.lock().unwrap() = 0.0;
     }
 }
 

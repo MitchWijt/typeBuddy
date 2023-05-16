@@ -1,5 +1,7 @@
 use std::io::{stdin};
-use std::sync::{mpsc};
+use std::sync::{Arc, mpsc, Mutex};
+use std::sync::mpsc::Sender;
+use std::sync::mpsc::Receiver;
 use termion::event::Key;
 use termion::input::TermRead;
 use crate::game_state::GameState;
@@ -7,12 +9,13 @@ use crate::game_text::GameText;
 use crate::statistics::Statistics;
 use crate::symbols::{Color};
 use crate::terminal::Terminal;
-use crate::timer::{Timer, TimerState};
+use crate::timer::{Timer};
 
 pub struct Game {
     text: GameText,
     state: GameState,
-    terminal: Terminal
+    terminal: Terminal,
+    timer: Timer
 }
 
 impl Game {
@@ -21,6 +24,7 @@ impl Game {
             text: GameText::new(),
             state: GameState::new(),
             terminal: Terminal::new(),
+            timer: Timer::new()
         }
     }
 
@@ -35,7 +39,7 @@ impl Game {
     }
 
     fn initialize(&mut self) {
-        self.terminal.clear_console();
+        self.terminal.clear_before_cursor();
         self.terminal.hide_cursor();
 
         self.text.underline_char(&self.state.cursor_index).unwrap();
@@ -59,15 +63,29 @@ impl Game {
         self.state.amount_chars_incorrect += 1.0;
     }
 
+    pub fn stop(&mut self, duration: Arc<Mutex<f32>>) -> Result<(), &'static str> {
+        self.state.duration_in_seconds = *duration.lock().unwrap();
+        self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
+
+        self.terminal.clear_console();
+        self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'Ctr + c' to quit"));
+
+        let stats = Statistics::from_state(&self.state);
+        stats.print(&mut self.terminal);
+        stats.save();
+
+        self.state.print_heatmap(&mut self.terminal);
+
+        Ok(())
+    }
+
     pub fn start(&mut self) -> Result<(), &'static str> {
         self.initialize();
 
         let raw_text = self.text.raw_text.clone();
         let mut chars = raw_text.chars().peekable();
 
-        let (tx_timer_duration, rx_timer_duration ) = mpsc::channel::<f32>();
-        let (tx_timer_state, rx_timer_state) = mpsc::channel::<TimerState>();
-        Timer::start(tx_timer_duration.clone(), rx_timer_state);
+        self.timer.start();
 
         for key in stdin().keys() {
             match key.unwrap() {
@@ -79,7 +97,7 @@ impl Game {
                         self.reset();
                         self.initialize();
                         chars = raw_text.chars().peekable();
-                        Timer::reset(tx_timer_state.clone());
+                        self.timer.reset();
                     }
                 }
                 Key::Char(key) => {
@@ -104,19 +122,7 @@ impl Game {
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
                             if self.is_end() {
-                                Timer::stop(tx_timer_state.clone());
-
-                                self.state.duration_in_seconds = rx_timer_duration.recv().unwrap();
-                                self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
-
-                                self.terminal.clear_console();
-                                self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'Ctr + c' to quit"));
-
-                                let stats = Statistics::from_state(&self.state);
-                                stats.print(&mut self.terminal);
-                                stats.save();
-
-                                self.state.print_heatmap(&mut self.terminal);
+                                self.stop(self.timer.duration.clone())?;
                             };
                         },
                         None => {}

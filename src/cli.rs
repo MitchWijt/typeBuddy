@@ -12,7 +12,10 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    Start,
+    Start {
+        #[clap(long)]
+        max_minutes: Option<u32>
+    },
     Plot {
         #[clap(long, default_value_t = false)]
         wpm: bool,
@@ -27,7 +30,7 @@ impl Cli {
         let cli = Cli::parse();
 
         match &cli.command {
-            Some(Commands::Start) => {
+            Some(Commands::Start {max_minutes}) => {
                 let mut game = Game::new();
                 game.start()?;
             },
