@@ -1,6 +1,9 @@
 use std::collections::HashMap;
-use std::fs;
-use std::fs::{read_to_string};
+use std::{fs, io};
+use std::fs::{File, read_to_string};
+use std::io::{BufRead, BufReader, Lines};
+use std::ops::Add;
+use std::path::Path;
 use rand::Rng;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 
@@ -24,7 +27,7 @@ impl GameText {
         }
 
         GameText {
-            length: text.len() as u32,
+            length: hash_map.len() as u32,
             raw_text: text,
             text_hashmap: hash_map,
         }
@@ -62,13 +65,11 @@ impl GameText {
     }
 
     pub fn remove_underlines(&mut self) -> Result<(), &'static str> {
-        for index in 0..(self.raw_text.len()) as u32 {
+        for index in 0..(self.text_hashmap.len()) as u32 {
             let character = self.text_hashmap.get(&index).unwrap();
 
             let removed_underline_char = character.replace(UNDERLINE, "");
-            let remove_reset_char = removed_underline_char.replace(RESET, "");
-
-            self.text_hashmap.insert(index, remove_reset_char);
+            self.text_hashmap.insert(index, removed_underline_char);
         }
 
         Ok(())
@@ -96,9 +97,19 @@ impl Paragraph {
 
         let files = fs::read_dir("./assets/excerpts").unwrap();
         for dir_entry in files {
+            let mut excerpt_lines = Vec::new();
+
             let file_path = dir_entry.unwrap().path();
 
-            let excerpt = read_to_string(file_path).unwrap();
+            if let Ok(lines) = read_lines(file_path) {
+                for line in lines {
+                    if let Ok(v) = line {
+                        excerpt_lines.push(v);
+                    }
+                }
+            }
+
+            let excerpt = excerpt_lines.join("");
             excerpts.push(excerpt);
         };
 
@@ -113,6 +124,13 @@ impl Paragraph {
 
         self.excerpts.get(random_index).unwrap().clone()
     }
+}
+
+fn read_lines<P>(file_name: P) -> io::Result<Lines<BufReader<File>>>
+where P: AsRef<Path>{
+    let file = File::open(file_name)?;
+    let lines = BufReader::new(file).lines();
+    Ok(lines)
 }
 
 #[cfg(test)]
@@ -187,7 +205,7 @@ mod tests {
 
         //then
         let char = game_text.text_hashmap.get(&2).unwrap();
-        assert_eq!(char, &String::from("l"));
+        assert_eq!(char, &String::from("l\x1b[0m"));
 
         Ok(())
     }
