@@ -33,6 +33,7 @@ impl Plotter {
     }
 
     pub fn plot(&mut self) -> Result<(), &'static str> {
+        self.terminal.hide_cursor();
         self.plot_y()?;
         self.plot_x()?;
 
