@@ -1,9 +1,10 @@
 use std::collections::HashMap;
-use std::{fs, io};
+use std::{env, fs, io};
 use std::fs::{File};
 use std::io::{BufRead, BufReader, Lines};
 use std::path::Path;
 use rand::Rng;
+use crate::excerpts::get_excerpts;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 
 pub struct GameText {
@@ -92,26 +93,7 @@ struct Paragraph {
 
 impl Paragraph {
     pub fn new() -> Self {
-        let mut excerpts = Vec::new();
-
-        let files = fs::read_dir("./excerpts").unwrap();
-        for dir_entry in files {
-            let mut excerpt_lines = Vec::new();
-
-            let file_path = dir_entry.unwrap().path();
-
-            if let Ok(lines) = read_lines(file_path) {
-                for line in lines {
-                    if let Ok(v) = line {
-                        excerpt_lines.push(v);
-                    }
-                }
-            }
-
-            let excerpt = excerpt_lines.join("");
-            excerpts.push(excerpt);
-        };
-
+        let excerpts = get_excerpts();
         Paragraph {
             excerpts
         }
