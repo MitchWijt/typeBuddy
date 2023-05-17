@@ -34,7 +34,7 @@ TypeBuddy will use this to read from and write to in order to save your stats.
 ### Training
 ![Plotter](./assets/example.gif)
 ### Plotter
-![Plotter](./assets/plot.png)
+![Plotter](./assets/plotter.png)
 
 
 
