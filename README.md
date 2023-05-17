@@ -30,5 +30,11 @@ TypeBuddy will use this to read from and write to in order to save your stats.
 - `type_buddy plot --wpm` to plot your WPM
 - `type_buddy plot --accuracy` to plot your accuracy
 
+# Demo's
+### Training
+![Plotter](./assets/example.gif)
+### Plotter
+![Plotter](./assets/plot.png)
+
 
 
