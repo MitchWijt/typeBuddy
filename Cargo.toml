@@ -8,7 +8,7 @@ description = "This CLI will help you improve your typing accuracy and speed! Im
 readme = "README.md"
 homepage = "https://github.com/MitchWijt/typeBuddy"
 repository = "https://github.com/MitchWijt/typeBuddy"
-keywords = ["cli", "typing", "type-accuracy", "type-speed", "learning", "improve-typing"]
+keywords = ["cli", "typing", "type-accuracy", "type-speed", "learning"]
 categories = ["command-line-utilities"]
 
 [dependencies]
