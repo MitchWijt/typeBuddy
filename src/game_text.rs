@@ -94,7 +94,7 @@ impl Paragraph {
     pub fn new() -> Self {
         let mut excerpts = Vec::new();
 
-        let files = fs::read_dir("./assets/excerpts").unwrap();
+        let files = fs::read_dir("./excerpts").unwrap();
         for dir_entry in files {
             let mut excerpt_lines = Vec::new();
 
