@@ -64,8 +64,11 @@ impl GameText {
     pub fn remove_underlines(&mut self) -> Result<(), &'static str> {
         for index in 0..(self.raw_text.len()) as u32 {
             let character = self.text_hashmap.get(&index).unwrap();
+
             let removed_underline_char = character.replace(UNDERLINE, "");
-            self.text_hashmap.insert(index, removed_underline_char);
+            let remove_reset_char = removed_underline_char.replace(RESET, "");
+
+            self.text_hashmap.insert(index, remove_reset_char);
         }
 
         Ok(())
@@ -109,5 +112,136 @@ impl Paragraph {
         let random_index = rng.gen_range(0..self.excerpts.len());
 
         self.excerpts.get(random_index).unwrap().clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::game::Game;
+    use super::*;
+
+    #[test]
+    fn test_game_text_hashmap_to_string() {
+        //given
+        let game_text = GameText {
+            length: 5,
+            raw_text: String::from("Hello"),
+            text_hashmap: HashMap::from([
+                (0, String::from('H')),
+                (1, String::from('e')),
+                (2, String::from('l')),
+                (3, String::from('l')),
+                (4, String::from('o')),
+            ])
+        };
+
+        //when
+        let game_text_string = game_text.hashmap_to_string();
+
+        //then
+        assert_eq!(game_text_string, String::from("Hello"));
+    }
+
+    #[test]
+    fn test_game_text_underline_char() -> Result<(), &'static str> {
+        //given
+        let mut game_text = GameText {
+            length: 5,
+            raw_text: String::from("Hello"),
+            text_hashmap: HashMap::from([
+                (0, String::from('H')),
+                (1, String::from('e')),
+                (2, String::from('l')),
+                (3, String::from('l')),
+                (4, String::from('o')),
+            ])
+        };
+
+        //when
+        game_text.underline_char(&2)?;
+
+        //then
+        let altered_char = game_text.text_hashmap.get(&2).unwrap();
+        assert_eq!(altered_char, &String::from("\x1b[4ml\x1b[0m"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_game_text_remove_underlines() -> Result<(), &'static str> {
+        //given
+        let mut game_text = GameText {
+            length: 5,
+            raw_text: String::from("Hello"),
+            text_hashmap: HashMap::from([
+                (0, String::from('H')),
+                (1, String::from('e')),
+                (2, String::from("\x1b[4ml\x1b[0m")),
+                (3, String::from('l')),
+                (4, String::from('o')),
+            ])
+        };
+
+        //when
+        game_text.remove_underlines()?;
+
+        //then
+        let char = game_text.text_hashmap.get(&2).unwrap();
+        assert_eq!(char, &String::from("l"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_game_text_color_char() -> Result<(), &'static str> {
+        //given
+        let mut game_text = GameText {
+            length: 5,
+            raw_text: String::from("Hello"),
+            text_hashmap: HashMap::from([
+                (0, String::from('H')),
+                (1, String::from('e')),
+                (2, String::from("l")),
+                (3, String::from('l')),
+                (4, String::from('o')),
+            ])
+        };
+
+        //when
+        game_text.color_char(&2, Color::Green)?;
+
+        //then
+        let char = game_text.text_hashmap.get(&2).unwrap();
+        assert_eq!(char, &String::from("\x1b[38;5;46ml\x1b[0m"));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_game_text_reset_hashmap() -> Result<(), &'static str> {
+        //given
+        let mut game_text = GameText {
+            length: 5,
+            raw_text: String::from("Hello"),
+            text_hashmap: HashMap::from([
+                (0, String::from("\x1b[38;5;46mH\x1b[0m")),
+                (1, String::from("\x1b[38;5;46me\x1b[0m")),
+                (2, String::from("\x1b[38;5;46ml\x1b[0m")),
+                (3, String::from("\x1b[38;5;46ml\x1b[0m")),
+                (4, String::from("\x1b[38;5;46mo\x1b[0m")),
+            ])
+        };
+
+        //when
+        game_text.reset_hashmap();
+
+        //then
+        assert_eq!(game_text.text_hashmap.len(), 5);
+        for (_, char) in game_text.text_hashmap {
+            let includes_csi = char.contains("\x1b");
+            assert_eq!(includes_csi, false);
+        }
+
+        Ok(())
     }
 }
