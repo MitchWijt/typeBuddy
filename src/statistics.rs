@@ -1,4 +1,5 @@
 use std::{env, thread};
+use std::collections::VecDeque;
 use std::fs::{OpenOptions};
 use std::io::{BufReader, BufWriter, Seek, SeekFrom, Write};
 use chrono::{Datelike, Local, Timelike, TimeZone};
@@ -48,7 +49,6 @@ impl Statistics {
                                            self.wpm, self.accuracy, self.duration));
     }
 
-    //make sure to save the most recent ones first. FIFO
     pub fn save(self) {
         let stats_dir_path = env::var("TB_STATS_DIR");
 
@@ -65,11 +65,11 @@ impl Statistics {
                         .unwrap();
 
                     let reader = BufReader::new(&file);
-                    let mut stats: Vec<Statistics> = match from_reader(reader) {
+                    let mut stats: VecDeque<Statistics> = match from_reader(reader) {
                         Ok(v) => v,
-                        Err(_) => Vec::new()
+                        Err(_) => VecDeque::new()
                     };
-                    stats.push(self);
+                    stats.push_front(self);
 
                     file.set_len(0).unwrap();
                     file.seek(SeekFrom::Start(0)).unwrap();
@@ -128,7 +128,7 @@ impl Statistics {
             };
 
             let date = Local.timestamp_opt(statistic.timestamp, 0).unwrap();
-            let date_string = format!("{}-{} {}:{}", date.month(), date.day(), date.time().hour(), date.time().minute());
+            let date_string = format!("{}-{}_{}:{}", date.month(), date.day(), date.time().hour(), date.time().minute());
             data.push((data_value, date_string));
         };
 
