@@ -1,9 +1,15 @@
 [package]
 name = "type_buddy"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Mitchel Wijt <mitchel@wijt.net>"]
+license = "MIT"
+description = "This CLI will help you improve your typing accuracy and speed! Improve your personal bests and look back on your previous records in a graph. All in the convenience of your own terminal!"
+readme = "README.md"
+homepage = "https://github.com/MitchWijt/typeBuddy"
+repository = "https://github.com/MitchWijt/typeBuddy"
+keywords = ["cli", "typing", "type-accuracy", "type-speed", "learning", "improve-typing"]
+categories = ["command-line-utilities"]
 
 [dependencies]
 chrono = "0.4.24"
