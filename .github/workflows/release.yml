@@ -92,6 +92,7 @@ jobs:
       - name: Create Release
         uses: ncipollo/release-action@v1.12.0
         with:
+          draft: true,
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: /home/runner/work/typeBuddy/typeBuddy/binaries/type_buddy-x86_64-apple-darwin,/home/runner/work/typeBuddy/typeBuddy/binaries/type_buddy-x86_64-unknown-linux-gnu
+          artifacts: "typeBuddy/binaries/*"
