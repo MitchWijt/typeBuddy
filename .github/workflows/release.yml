@@ -94,4 +94,4 @@ jobs:
         with:
           tag: ${{ steps.tag_version.outputs.new_tag }}
           name: Release ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: target/x86_64-unknown-linux-gnu/release/type_buddy,target/x86_64-apple-darwin/release/type_buddy
+          artifacts: binaries/type_buddy-x86_64-apple-darwin,binaries/type_buddy-x86_64-unknown-linux-gnu
