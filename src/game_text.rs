@@ -1,10 +1,5 @@
 use std::collections::HashMap;
-use std::{env, fs, io};
-use std::fs::{File};
-use std::io::{BufRead, BufReader, Lines};
-use std::path::Path;
 use rand::Rng;
-use crate::excerpts::get_excerpts;
 use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
 
 pub struct GameText {
@@ -93,7 +88,13 @@ struct Paragraph {
 
 impl Paragraph {
     pub fn new() -> Self {
-        let excerpts = get_excerpts();
+        let black_holes = include_str!("../assets/excerpts/black_holes.txt").to_string();
+        let harry_potter = include_str!("../assets/excerpts/harry_potter_1.txt").to_string();
+        let star_wars = include_str!("../assets/excerpts/star_wars_1.txt").to_string();
+        let theory = include_str!("../assets/excerpts/theory_relativity.txt").to_string();
+
+        let excerpts = vec![black_holes, harry_potter, star_wars, theory];
+
         Paragraph {
             excerpts
         }
@@ -105,13 +106,6 @@ impl Paragraph {
 
         self.excerpts.get(random_index).unwrap().clone()
     }
-}
-
-fn read_lines<P>(file_name: P) -> io::Result<Lines<BufReader<File>>>
-where P: AsRef<Path>{
-    let file = File::open(file_name)?;
-    let lines = BufReader::new(file).lines();
-    Ok(lines)
 }
 
 #[cfg(test)]
