@@ -63,6 +63,7 @@ jobs:
     name: Publish
     needs: [create-binaries]
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
