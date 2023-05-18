@@ -52,13 +52,11 @@ jobs:
           args: --release --locked --target ${{ matrix.target }}
       - name: Rename release binary
         shell: bash
-        run: |
-          mv target/${{ matrix.target }}/release/$BIN_NAME target/${{ matrix.target }}/release/$BIN_NAME-${{ matrix.target }}
+        run: mv target/${{ matrix.target }}/release/type_buddy target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v2.2.4
         with:
-          path: |
-            target/${{ matrix.target }}/release/$BIN_NAME-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
   publish:
     name: Publish
     needs: [create-binaries]
