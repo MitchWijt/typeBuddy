@@ -101,7 +101,7 @@ jobs:
           draft: true
           allowUpdates: true
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: "typeBuddy/typeBuddy/binaries/test.txt"
+          artifacts: "typeBuddy/test.txt"
           artifactErrorsFailBuild: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
