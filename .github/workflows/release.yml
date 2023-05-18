@@ -50,9 +50,11 @@ jobs:
           use-cross: ${{ matrix.cross }}
           command: build
           args: --release --locked --target ${{ matrix.target }}
+
       - name: Rename release binary
         shell: bash
         run: mv target/${{ matrix.target }}/release/type_buddy target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
+
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v2.2.4
         with:
@@ -79,22 +81,13 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Display structure of downloaded files
-        run: ls -R
-
-      - name: working_dir
-        run: pwd
-
-      - name: list all form current dir
-        run: ls -a
-
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           draft: true
           allowUpdates: true
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: "binaries/binaries/type_buddy-x86_64-apple-darwin,binaries/binaries/type_buddy-x86_64-unknown-linux-gnu"
+          artifacts: "binaries/binaries/*"
           artifactErrorsFailBuild: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
