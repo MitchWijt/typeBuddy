@@ -25,11 +25,6 @@ jobs:
             rust: stable
             target: x86_64-apple-darwin
             cross: false
-
-          - build: aarch64-macos
-            os: macos-latest
-            rust: stable
-            target: aarch64-apple-darwin
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
