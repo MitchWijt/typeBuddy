@@ -128,6 +128,7 @@ impl Game {
                             self.terminal.clear_before_cursor();
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
+                            // if self.is_end || reached max_min
                             if self.is_end() {
                                 self.stop(self.timer.duration.clone())?;
                             };

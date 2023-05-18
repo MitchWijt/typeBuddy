@@ -4,6 +4,10 @@ use std::thread;
 use std::time::Duration;
 use crate::game::Game;
 
+// create a TimerState struct which contains the duration and a boolean reached_max_min.
+// per key stroke we can check if this boolean is set to true, if it is. We stop the game and give back the stats
+// reaching max_min we do in the timer.start() function
+
 pub struct Timer {
     pub duration: Arc<Mutex<f32>>,
     max_minutes: Option<u32>
@@ -37,8 +41,7 @@ impl Timer {
                     let max_seconds = (minutes * 60) as f32;
                     let current_seconds = *duration.lock().unwrap();
 
-                    if current_seconds >= max_seconds {
-                        println!("END!");
+                    if current_seconds >= 10.0 {
                         return;
                     }
                 }
