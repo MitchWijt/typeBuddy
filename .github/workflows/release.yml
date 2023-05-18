@@ -77,6 +77,7 @@ jobs:
 #
       - uses: actions/download-artifact@v3
         with:
+          name: binary
           path: binaries
 
       - name: Bump version and push tag
@@ -96,12 +97,12 @@ jobs:
         run: ls -a
 
       - name: Create Release
-        uses: ncipollo/release-action@v1.12.0
+        uses: ncipollo/release-action@v1
         with:
           draft: true
           allowUpdates: true
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: "typeBuddy/test.txt"
+          artifacts: "typeBuddy/binaries/*"
           artifactErrorsFailBuild: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
