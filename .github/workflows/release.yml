@@ -47,8 +47,9 @@ jobs:
         with:
           use-cross: ${{ matrix.cross }}
           command: test
-          if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos
-          args: --release --locked --target ${{ matrix.target }}
+          if: matrix.build == 'x86_64-linux' || matrix.build == 'x86_64-macos' || matrix.build == 'aarch64-macos'
+          args: --release --locked --target --bin type_buddy ${{ matrix.target }}
+          
       - name: Build release binary
         uses: actions-rs/cargo@v1
         with:
