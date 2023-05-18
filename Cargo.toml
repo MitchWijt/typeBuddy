@@ -1,6 +1,6 @@
 [package]
 name = "type_buddy"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2021"
 authors = ["Mitchel Wijt <mitchel@wijt.net>"]
 license = "MIT"

@@ -9,7 +9,6 @@ mod game_text;
 mod timer;
 mod statistics;
 mod plotter;
-mod excerpts;
 
 use std::process::exit;
 use crate::cli::Cli;
