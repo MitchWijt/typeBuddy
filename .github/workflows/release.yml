@@ -80,8 +80,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Display structure of downloaded files
-          run: ls -R
-          working-directory: binaries
+        run: ls -R
+        working-directory: binaries
 
       - name: working_dir
         run: pwd
