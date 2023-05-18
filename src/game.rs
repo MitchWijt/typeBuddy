@@ -13,16 +13,25 @@ pub struct Game {
     text: GameText,
     state: GameState,
     terminal: Terminal,
-    timer: Timer
+    pub timer: Timer,
 }
 
 impl Game {
-    pub fn new() -> Self {
+    pub fn new(max_minutes: &Option<u32>) -> Self {
+        let timer = match max_minutes {
+            Some(minutes) => {
+                Timer::from_max_minutes(minutes)
+            },
+            None => {
+                Timer::new()
+            }
+        };
+
         Game {
             text: GameText::new(),
             state: GameState::new(),
             terminal: Terminal::new(),
-            timer: Timer::new()
+            timer,
         }
     }
 
