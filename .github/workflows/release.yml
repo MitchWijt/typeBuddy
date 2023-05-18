@@ -70,7 +70,8 @@ jobs:
           submodules: false
 
       - uses: actions/download-artifact@v3
-        path: artifact
+        with:
+          path: artifact
 
       - name: Create Release
         uses: ncipollo/release-action@v1.12.0
