@@ -81,7 +81,6 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R
-        working-directory: binaries
 
       - name: working_dir
         run: pwd
@@ -95,7 +94,7 @@ jobs:
           draft: true
           allowUpdates: true
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: "typeBuddy/binaries/binaries/*"
+          artifacts: "typeBuddy/binaries/binaries/type_buddy-x86_64-apple-darwin,typeBuddy/binaries/binaries/type_buddy-x86_64-unknown-linux-gnu"
           artifactErrorsFailBuild: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
