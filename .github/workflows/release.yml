@@ -94,7 +94,7 @@ jobs:
           draft: true
           allowUpdates: true
           tag: ${{ steps.tag_version.outputs.new_tag }}
-          artifacts: "typeBuddy/binaries/binaries/type_buddy-x86_64-apple-darwin,typeBuddy/binaries/binaries/type_buddy-x86_64-unknown-linux-gnu"
+          artifacts: "binaries/binaries/type_buddy-x86_64-apple-darwin,binaries/binaries/type_buddy-x86_64-unknown-linux-gnu"
           artifactErrorsFailBuild: true
           replacesArtifacts: true
           token: ${{ secrets.GITHUB_TOKEN }}
