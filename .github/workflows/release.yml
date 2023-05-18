@@ -50,13 +50,14 @@ jobs:
           use-cross: ${{ matrix.cross }}
           command: build
           args: --release --locked --target ${{ matrix.target }}
-#      - name: Rename release binary
-#        shell: bash
-#        run: mv target/${{ matrix.target }}/release/type_buddy target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
-#      - name: Upload binary as artifact
-#        uses: actions/upload-artifact@v2.2.4
-#        with:
-#          path: target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
+      - name: Rename release binary
+        shell: bash
+        run: mv target/${{ matrix.target }}/release/type_buddy target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
+      - name: Upload binary as artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          name: binaries
+          path: target/${{ matrix.target }}/release/type_buddy-${{ matrix.target }}
   publish:
     name: Publish
     needs: [create-binaries]
@@ -68,9 +69,13 @@ jobs:
         with:
           submodules: false
 #
-#      - uses: actions/download-artifact@v3
-#        with:
-#          path: artifact
+      - uses: actions/download-artifact@v3
+        with:
+          path: binaries
+
+      - name: Display structure of downloaded files
+        run: ls -R
+        working-directory: binaries
 
       - name: Bump version and push tag
         id: tag_version
