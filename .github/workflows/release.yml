@@ -73,7 +73,15 @@ jobs:
         with:
           path: artifact
 
+      - name: Bump version and push tag
+        id: tag_version
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create Release
         uses: ncipollo/release-action@v1.12.0
         with:
+          tag: ${{ steps.tag_version.outputs.new_tag }}
+          name: Release ${{ steps.tag_version.outputs.new_tag }}
           artifacts: "artifact/type_buddy-x86_64-unknown-linux-gnu, artifact/type_buddy-x86_64-apple-darwin"
