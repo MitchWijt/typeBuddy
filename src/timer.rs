@@ -4,45 +4,57 @@ use std::thread;
 use std::time::Duration;
 use crate::game::Game;
 
-// create a TimerState struct which contains the duration and a boolean reached_max_min.
-// per key stroke we can check if this boolean is set to true, if it is. We stop the game and give back the stats
-// reaching max_min we do in the timer.start() function
+pub struct TimerState {
+    pub duration: f32,
+    max_minutes: Option<u32>,
+    pub reached_max_min: bool
+}
 
 pub struct Timer {
-    pub duration: Arc<Mutex<f32>>,
-    max_minutes: Option<u32>
+    pub state: Arc<Mutex<TimerState>>,
 }
 
 impl Timer {
     pub fn new() -> Self {
+        let state = TimerState {
+            duration: 0.0,
+            max_minutes: None,
+            reached_max_min: false
+        };
+
         Timer {
-            duration: Arc::new(Mutex::new(0.0)),
-            max_minutes: None
+            state: Arc::new(Mutex::new(state))
         }
     }
 
     pub fn from_max_minutes(max_minutes: &u32) -> Self {
+        let state = TimerState {
+            duration: 0.0,
+            max_minutes: Some(*max_minutes),
+            reached_max_min: false
+        };
+
         Timer {
-            duration: Arc::new(Mutex::new(0.0)),
-            max_minutes: Some(max_minutes.clone())
+            state: Arc::new(Mutex::new(state))
         }
     }
 
     pub fn start(&self) {
-        let duration = self.duration.clone();
-        let max_minutes = self.max_minutes;
+        let state = self.state.clone();
 
         thread::spawn(move || {
+            let max_minutes = state.lock().unwrap().max_minutes;
+
             loop {
                 thread::sleep(Duration::from_secs(1));
-                *duration.lock().unwrap() += 1.0;
+                state.lock().unwrap().duration += 1.0;
 
                 if let Some(minutes) = max_minutes {
                     let max_seconds = (minutes * 60) as f32;
-                    let current_seconds = *duration.lock().unwrap();
+                    let current_seconds = state.lock().unwrap().duration;
 
-                    if current_seconds >= 10.0 {
-                        return;
+                    if current_seconds >= max_seconds {
+                        state.lock().unwrap().reached_max_min = true;
                     }
                 }
             }
@@ -50,7 +62,7 @@ impl Timer {
     }
 
     pub fn reset(&self) {
-        *self.duration.lock().unwrap() = 0.0;
+        self.state.lock().unwrap().duration = 0.0;
     }
 }
 

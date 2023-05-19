@@ -70,9 +70,10 @@ impl Game {
         self.state.amount_chars_incorrect += 1.0;
     }
 
-    pub fn stop(&mut self, duration: Arc<Mutex<f32>>) -> Result<(), &'static str> {
-        self.state.duration_in_seconds = *duration.lock().unwrap();
-        self.state.amount_chars_correct = &((self.text.length) as f32) - self.state.amount_chars_incorrect;
+    pub fn stop(&mut self) -> Result<(), &'static str> {
+        self.state.duration_in_seconds = self.timer.state.lock().unwrap().duration;
+        let length_typed_text = (self.state.cursor_index + 1) as f32;
+        self.state.amount_chars_correct = length_typed_text - self.state.amount_chars_incorrect;
 
         self.terminal.clear_console();
         self.terminal.render_text(&String::from("Finesso! Congrats, Please press 'Ctrl + r' to play again. Or 'Ctr + c' to quit"));
@@ -128,9 +129,8 @@ impl Game {
                             self.terminal.clear_before_cursor();
                             self.terminal.render_text(&self.text.hashmap_to_string());
 
-                            // if self.is_end || reached max_min
-                            if self.is_end() {
-                                self.stop(self.timer.duration.clone())?;
+                            if self.is_end() || self.timer.state.lock().unwrap().reached_max_min {
+                                self.stop()?;
                             };
                         },
                         None => {}
