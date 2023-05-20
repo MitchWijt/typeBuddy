@@ -46,12 +46,26 @@ impl GameState {
         terminal.set_cursor_row(6);
         terminal.render_text(&String::from("Error breakdown:"));
         terminal.set_cursor_row(7);
-        for (char, amount_incorrect) in &self.heatmap_incorrect_chars {
+
+        let mut heatmap_vec: Vec<(&String, &u32)> = self.heatmap_incorrect_chars.iter().collect();
+        heatmap_vec.sort_by(|a, b| b.1.cmp(a.1));
+
+        let mut index = 0;
+        let mut cursor_row = 7;
+
+        for (char, amount_incorrect) in heatmap_vec {
+            if index % 6 == 0 {
+                cursor_row += 2;
+                terminal.set_cursor_row(cursor_row);
+            }
+
             if char == " " {
                 terminal.render_text(&String::from(format!("' ':{}\t", amount_incorrect)));
             } else {
                 terminal.render_text(&String::from(format!("{}:{}\t", char, amount_incorrect)));
             }
+
+            index += 1;
         }
     }
 }
