@@ -28,7 +28,7 @@ impl Statistics {
         let minutes = state.duration_in_seconds / 60.0;
         let words = total_characters / 5.0;
 
-        let accuracy: u32 = ((state.amount_chars_correct / total_characters) * 100.0) as u32;
+        let accuracy: u32 = ((state.amount_chars_correct / total_characters) * 100.0).round() as u32;
         let wpm: u32 = (words / minutes).round() as u32;
         let timestamp = Local::now().timestamp();
 
@@ -138,5 +138,33 @@ impl Statistics {
             data,
             y_values
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::{HashMap, HashSet};
+    use super::*;
+
+    #[test]
+    fn test_new_statistics_from_state() {
+        //given
+        let state = GameState {
+            cursor_index: 20,
+            amount_chars_correct: 10.0,
+            amount_chars_incorrect: 5.0,
+            duration_in_seconds: 120.0,
+            strike_is_correct: true,
+            previous_indexes: HashSet::new(),
+            heatmap_incorrect_chars: HashMap::new()
+        };
+
+        //when
+        let stats = Statistics::from_state(&state);
+
+        //then
+        assert_eq!(stats.duration, 120);
+        assert_eq!(stats.wpm, 2);
+        assert_eq!(stats.accuracy, 67);
     }
 }

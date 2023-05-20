@@ -55,7 +55,7 @@ impl Plotter {
     }
 
     fn plot_y(&mut self) -> Result<(), &'static str> {
-        let mut cursor_col: u16 = 1;
+        let mut cursor_col: u16;
         let mut cursor_row: u16 = 1;
 
         let mut ticks = 0;
