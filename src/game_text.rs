@@ -110,7 +110,6 @@ impl Paragraph {
 
 #[cfg(test)]
 mod tests {
-    use crate::game::Game;
     use super::*;
 
     #[test]

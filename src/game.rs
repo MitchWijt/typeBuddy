@@ -1,5 +1,4 @@
 use std::io::{stdin};
-use std::sync::{Arc, Mutex};
 use termion::event::Key;
 use termion::input::TermRead;
 use crate::game_state::GameState;

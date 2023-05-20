@@ -1,5 +1,4 @@
-use std::{env, thread};
-use std::time::Duration;
+use std::{env};
 use clap::{Parser, Subcommand};
 use crate::game::Game;
 use crate::plotter::Plotter;
