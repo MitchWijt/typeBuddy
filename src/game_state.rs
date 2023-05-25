@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
-use crate::symbols::{UNDERLINE, RESET};
 use crate::terminal::Terminal;
+use termion::style;
 
 #[derive(Debug)]
 pub struct GameState {
@@ -29,8 +29,8 @@ impl GameState {
     pub fn register_incorrect_char(&mut self, text_hashmap: &HashMap<u32, String>) {
         let char = text_hashmap.get(&self.cursor_index).unwrap();
 
-        let no_underline = char.replace(UNDERLINE, "");
-        let no_reset = no_underline.replace(RESET, "");
+        let no_underline = char.replace(&style::Underline.to_string(), "");
+        let no_reset = no_underline.replace(&style::Reset.to_string(), "");
 
         self.heatmap_incorrect_chars
             .entry(no_reset)

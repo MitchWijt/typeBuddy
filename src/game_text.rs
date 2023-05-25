@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use rand::Rng;
-use crate::symbols::{Color, GREEN, RED, RESET, UNDERLINE};
+use crate::symbols::Color;
+use termion::{style, color};
 
 pub struct GameText {
     pub raw_text: String,
@@ -53,7 +54,10 @@ impl GameText {
 
     pub fn underline_char(&mut self, cursor_index: &u32) -> Result<(), &'static str> {
         let char_to_alter = self.text_hashmap.get(cursor_index).unwrap();
-        let underlined_char = String::from(format!("{}{}{}", UNDERLINE, char_to_alter, RESET));
+        let underlined_char = String::from(format!("{}{}{}", 
+                                                   style::Underline,
+                                                   char_to_alter,
+                                                   style::Reset));
         self.text_hashmap.insert(*cursor_index, underlined_char);
 
         Ok(())
@@ -63,7 +67,7 @@ impl GameText {
         for index in 0..(self.text_hashmap.len()) as u32 {
             let character = self.text_hashmap.get(&index).unwrap();
 
-            let removed_underline_char = character.replace(UNDERLINE, "");
+            let removed_underline_char = character.replace(&style::Underline.to_string(), "");
             self.text_hashmap.insert(index, removed_underline_char);
         }
 
@@ -73,8 +77,14 @@ impl GameText {
     pub fn color_char(&mut self, cursor_index: &u32, color: Color) -> Result<(), &'static str> {
         let char_to_alter = self.text_hashmap.get(cursor_index).unwrap();
         let colored_char = match color {
-            Color::Green => String::from(format!("{}{}{}", GREEN, char_to_alter, RESET)),
-            Color::Red => String::from(format!("{}{}{}", RED, char_to_alter, RESET)),
+            Color::Green => String::from(format!("{}{}{}",
+                                                 color::Fg(color::Green),
+                                                 char_to_alter,
+                                                 color::Fg(color::Reset))),
+            Color::Red   => String::from(format!("{}{}{}",
+                                                 color::Fg(color::Red),
+                                                 char_to_alter,
+                                                 color::Fg(color::Reset))),
         };
         self.text_hashmap.insert(*cursor_index, colored_char);
 
