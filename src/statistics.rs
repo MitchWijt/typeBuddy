@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::{env, thread};
 use std::collections::VecDeque;
 use std::fs::{OpenOptions};
@@ -55,6 +56,11 @@ impl Statistics {
         match stats_dir_path {
             Ok(dir_path) => {
                 let path = format!("{}/type_buddy_stats.json", dir_path);
+                let path_exists = Path::new(&path).exists();
+
+                if !path_exists {
+                    return;
+                }
 
                 let handle = thread::spawn(move || {
                     let mut file = OpenOptions::new()
@@ -81,7 +87,7 @@ impl Statistics {
 
                 handle.join().unwrap();
             }
-            Err(_) => return
+            Err(_) => ()
         }
     }
 

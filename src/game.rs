@@ -45,7 +45,7 @@ impl Game {
     }
 
     fn initialize(&mut self) {
-        self.terminal.clear_before_cursor();
+        self.terminal.clear_console();
         self.terminal.hide_cursor();
 
         self.text.underline_char(&self.state.cursor_index).unwrap();
@@ -69,7 +69,7 @@ impl Game {
         self.state.amount_chars_incorrect += 1.0;
     }
 
-    pub fn stop(&mut self) -> Result<(), &'static str> {
+    pub fn stop(&mut self) -> Result<(), &'static str> {        
         self.state.duration_in_seconds = self.timer.state.lock().unwrap().duration;
         let length_typed_text = (self.state.cursor_index + 1) as f32;
         self.state.amount_chars_correct = length_typed_text - self.state.amount_chars_incorrect;
