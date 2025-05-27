@@ -1,4 +1,6 @@
 use std::io::{stdin};
+use std::iter::Peekable;
+use std::str::Chars;
 use termion::event::Key;
 use termion::input::TermRead;
 use crate::game_state::GameState;
@@ -88,11 +90,10 @@ impl Game {
 
     pub fn start(&mut self) -> Result<(), &'static str> {
         self.initialize();
-
-        let raw_text = self.text.raw_text.clone();
-        let mut chars = raw_text.chars().peekable();
-
         self.timer.start();
+
+        let mut raw_text = self.text.raw_text.clone();
+        let mut chars = raw_text.chars().peekable();
 
         for key in stdin().keys() {
             match key.unwrap() {
@@ -101,10 +102,22 @@ impl Game {
                         self.terminal.clear_console();
                         break;
                     } else if key == 'r' {
-                        self.reset();
                         self.initialize();
-                        chars = raw_text.chars().peekable();
+                        self.reset();
                         self.timer.reset();
+
+                        chars = raw_text.chars().peekable();
+                    } else if key == 'n' {
+                        self.reset();
+                        self.timer.reset();
+
+                        let game_text = GameText::new();
+                        self.text = game_text;
+
+                        raw_text = self.text.raw_text.clone();
+                        chars = raw_text.chars().peekable();
+
+                        self.initialize();
                     }
                 }
                 Key::Char(key) => {
